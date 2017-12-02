@@ -25,8 +25,18 @@ func solve1() {
 
 func solve2() {
     let sheet = Reader().read1()
+    var sum = 0
+    for line in sheet {
+        for int1 in line {
+            for int2 in line {
+                if int1 != int2 && int1 % int2 == 0 {
+                    sum += int1 / int2
+                }
+            }
+        }
+    }
 
-    print(sheet)
+    print(sum)
 }
 
 //solve1()
