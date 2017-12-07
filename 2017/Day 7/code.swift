@@ -2,7 +2,6 @@
 // to run: `swift code.swift [input_filename]`
 import Foundation
 
-var nodes: [Node] = []
 
 func readTerminal(_ fileName: String) -> [String] {
     let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -15,13 +14,13 @@ func readTerminal(_ fileName: String) -> [String] {
     return lines.map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
 }
 
-struct Node {
+class Node {
     let id: String
     let weight: Int
     let subNodeIDs: [String]
 
     lazy var subNodes: [Node] = {
-        return subNodeIDs.map { nodes.index { $0.id == nodeID }! }
+        return subNodeIDs.map { nodeID in nodes.filter { $0.id == nodeID }.first! }
     }()
 
     var hasSubNodes: Bool {
@@ -41,25 +40,55 @@ struct Node {
     }
 
     var unbalancedSubNode: Node?
+    var wrongWeightSubNode: Node?
+    var shouldWeigh: Int?
+
+    func getAnswer() -> Int? {
+        if shouldWeigh != nil {
+            return shouldWeigh
+        }
+        if wrongWeightSubNode != nil {
+            return wrongWeightSubNode!.getAnswer()
+        }
+        return subNodes.flatMap {
+            $0.getAnswer()
+        }.first
+    }
 
     lazy var isUnbalanced: Bool = {
-        if !hasSubNodes { return false }
+        if !hasSubNodes {
+            print("\(id) BALANCED: has no subnodes")
+            return false }
 
         let hasUnbalancedSubNodes = subNodes.reduce(false) {
             return $0 || $1.isUnbalanced
         }
         if hasUnbalancedSubNodes {
             unbalancedSubNode = subNodes.filter { $0.isUnbalanced }.first!
+            print("\(id) UNBALANCED: due to subnodes")
             return true
         }
 
         let weights = subNodes.map { $0.totalWeight }
-        return weights.reduce(true) { $0 && $1 == weights[0] }
+        let uniqueWeights = Set(weights)
+        let allweightsBalanced = uniqueWeights.count == 1
+
+        if allweightsBalanced {
+            print("\(id) BALANCED")
+        } else {
+            print("\(id) UNBALANCED: due to weights")
+            let wrongWeight = uniqueWeights.filter { w in weights.filter { $0 == w }.count == 1 }.first!
+            let correctWeight = uniqueWeights.filter { w in weights.filter { $0 == w }.count > 1 }.first!
+            wrongWeightSubNode = subNodes.filter { $0.totalWeight == wrongWeight }.first!
+
+            wrongWeightSubNode!.shouldWeigh = correctWeight - wrongWeightSubNode!.totalWeight + wrongWeightSubNode!.weight
+        }
+        return !allweightsBalanced
     }()
 
-    lazy var totalWeight: Int {
-        return weight + subNodes.map { $0.totalWeight }
-    }
+    lazy var totalWeight: Int = {
+        return weight + subNodes.reduce(0) { $0 + $1.totalWeight }
+    }()
 }
 
 extension Node: CustomDebugStringConvertible {
@@ -70,6 +99,8 @@ extension Node: CustomDebugStringConvertible {
         return  "\(id) (\(weight)) -> \(subNodeIDs)"
     }
 }
+
+var nodes: [Node] = []
 
 func findRoot() -> Node? {
     for node in nodes {
@@ -88,18 +119,21 @@ func findRoot() -> Node? {
     return nil
 }
 
-func findWrongWeight() -> Int {
-    let root = findRoot()
-    print(root!.id)
+func findWrongWeight() {
+    let root = findRoot()!
+    print(root.id)
 
-    root.isUnbalanced()
-    return 0
+    print(root.isUnbalanced)
+    print(root.unbalancedSubNode ?? "nil")
+    print(root.wrongWeightSubNode ?? "nil")
+    print(root.wrongWeightSubNode?.shouldWeigh ?? "nil")
+    print(root.getAnswer() ?? "not found")
 }
 
 func solve1(fileName: String = "input.txt") {
     let input = readTerminal(fileName)
     nodes = input.map { Node(string: $0)}
-    let weightThatFixesIt = findWrongWeight()
+     findWrongWeight()
 }
 
 if CommandLine.arguments.count > 1 {
