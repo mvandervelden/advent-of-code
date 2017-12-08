@@ -91,6 +91,7 @@ extension Instruction: CustomDebugStringConvertible {
 }
 
 var mem: [String: Int] = [:]
+var allTimeMax: Int = Int.min
 
 func solve1(fileName: String = "input.txt") {
     let input = readTerminal(fileName)
@@ -107,11 +108,14 @@ func solve1(fileName: String = "input.txt") {
         if inst.conditionEquality.conform(mem[inst.conditionID]!, toValue: inst.conditionValue) {
             mem[inst.id] = inst.change.perform(on: mem[inst.id]!, with: inst.offset)
         }
+        allTimeMax = max(allTimeMax, mem.max { a, b in a.value < b.value }!.value)
+        print(allTimeMax)
     }
 
     print(mem)
-    let max = mem.max { a, b in a.value < b.value }
-    print(max ?? "not found")
+    let lastmax = mem.max { a, b in a.value < b.value }
+    print(lastmax ?? "not found")
+    print(allTimeMax)
 }
 
 if CommandLine.arguments.count > 1 {
