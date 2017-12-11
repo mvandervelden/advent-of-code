@@ -24,29 +24,67 @@ func solve1(fileName: String = "input.txt") {
     lengths = input.split(separator: ",").map {
         Int(String($0).trimmingCharacters(in: .whitespacesAndNewlines))!
     }
-    let list = Array(0..<5)
+    let list = Array(0..<(fileName == "input.txt" ? 256 : 5))
     print(list)
     print(lengths)
 
     result = list
 
-    for len in lengths {
+    for i in 0..<lengths.count {
+        currentLenIndex = i
         printState()
-        _ = result[currentIndex..<len]
+
+        let len = lengths[currentLenIndex]
+        let endInd = currentIndex + len
+        // print("+++++")
+
+        if endInd >= result.count {
+            // print("---")
+            let firstRange = currentIndex..<result.count
+            // print(firstRange.count)
+            var part = result[firstRange]
+            // print(part)
+            let secRange = 0..<(endInd % result.count)
+            // print(secRange.count)
+            part += result[secRange]
+
+            let revPart: [Int] = part.reversed()
+            // print(revPart)
+
+            // print(revPart[0..<firstRange.count])
+            // print(revPart[firstRange.count..<revPart.count])
+            // print("---")
+            result.replaceSubrange(firstRange, with: revPart[0..<firstRange.count])
+            result.replaceSubrange(secRange, with: revPart[firstRange.count..<revPart.count])
+        } else {
+            // print("___")
+            let range = currentIndex..<endInd
+            let part = result[range]
+            let revPart = part.reversed()
+            result.replaceSubrange(range, with: revPart)
+            // print("___")
+        }
+        // print("-----")
+
+        currentIndex = (endInd + skipSize) % result.count
+        skipSize += 1
     }
 
     print(result)
+    print(result[0] * result[1])
 }
 
 func printState() {
     let string = (0..<result.count).reduce("") {
         var newResult = $0
-        if $1 == currentIndex {
-            newResult += "([\(result[$1])]"
-        } else if $1 == currentIndex + lengths[currentLenIndex] {
-            newResult += "\(result[$1]))"
+        if $1 == currentIndex && lengths[currentLenIndex] == 1 {
+            newResult += " ([\(result[$1])])"
+        } else if $1 == currentIndex {
+            newResult += " ([\(result[$1])]"
+        } else if $1 == (currentIndex + lengths[currentLenIndex] - 1) % result.count {
+            newResult += " \(result[$1]))"
         } else {
-            newResult += "\(result[$1])"
+            newResult += " \(result[$1])"
         }
         return newResult
     }
