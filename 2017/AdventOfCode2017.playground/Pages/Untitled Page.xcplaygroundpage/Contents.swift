@@ -9,4 +9,7 @@ let range = 0..<3
 let part = ints[range]
 let rev: [Int] = part.reversed()
 ints.replaceSubrange(range, with: rev)
+
+str.suffix(16)
+
 //: [Next](@next)
