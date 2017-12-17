@@ -11,5 +11,9 @@ let rev: [Int] = part.reversed()
 ints.replaceSubrange(range, with: rev)
 
 str.suffix(16)
-
+str.dropFirst()
+var arr = Array(str)
+String(arr.dropFirst(arr.count - 5) + arr.dropLast(5))
+arr.swapAt(1, 5)
+arr.index(of: "e")
 //: [Next](@next)
