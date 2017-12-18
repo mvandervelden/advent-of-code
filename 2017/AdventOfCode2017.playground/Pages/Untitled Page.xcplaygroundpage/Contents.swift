@@ -16,4 +16,7 @@ var arr = Array(str)
 String(arr.dropFirst(arr.count - 5) + arr.dropLast(5))
 arr.swapAt(1, 5)
 arr.index(of: "e")
+
+ints.insert(5, at: ints.count)
+3 % 2
 //: [Next](@next)
