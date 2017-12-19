@@ -43,6 +43,15 @@ class Instruction {
         }
     }
 
+    var param1Str: String? {
+        guard param1Int == nil else { return nil }
+        return param1
+    }
+
+    var param1Int: Int? {
+        return Int(param1)
+    }
+
     var param2Str: String? {
         guard let param2 = param2 else { return nil }
         guard param2Int == nil else { return nil }
@@ -61,71 +70,127 @@ extension Instruction: CustomDebugStringConvertible {
     }
 }
 
-var mem: [String: (v: Int, snd: Int?)] = [:]
+var instructions: [Instruction] = []
+var memories: [[String: Int]] = [[:], [:]]
+var queues: [[Int]] = [[], []]
+var locks = [false, false]
+var indexes = [0, 0]
+var valsSent: [Int] = [0, 0]
 
-func solve1(fileName: String = "input.txt") {
-    let input = readTerminal(fileName)
-    let instr = input.map { Instruction(string: $0) }
+func perform(queueIdx: Int) {
+    let otherQueueIdx = (queueIdx + 1) % 2
+    let idx = indexes[queueIdx]
+    let instruction = instructions[idx]
+    let register = instruction.param1Str
+    var memory = memories[queueIdx]
 
-    var recoveredFreq: Int? = nil
-    var idx: Int = 0
-    while recoveredFreq == nil {
-        if idx < 0 || idx >= instr.count {
-            print("OOB")
-            break
-        }
-        let i = instr[idx]
-        // print("\(idx)")//: \(mem)")
-
-        if mem[i.param1] == nil {
-            mem[i.param1] = (0, nil)
-        }
-        if let param2 = i.param2Str, mem[param2] == nil {
-            mem[param2] = (0, nil)
-        }
-
-        let mem1: (v: Int, snd: Int?) = mem[i.param1]!
-
-        switch i.op {
-        case .snd:
-            mem[i.param1] = (mem1.0, mem1.0)
-        case .set:
-            let val2: Int = i.param2Int ?? mem[i.param2Str!]!.0
-            mem[i.param1] = (val2, mem1.1)
-        case .add:
-            let val2: Int = i.param2Int ?? mem[i.param2Str!]!.0
-            mem[i.param1] = (mem1.0 + val2, mem1.1)
-        case .mul:
-            let val2: Int = i.param2Int ?? mem[i.param2Str!]!.0
-            mem[i.param1] = (mem1.0 * val2, mem1.1)
-        case .mod:
-            let val2: Int = i.param2Int ?? mem[i.param2Str!]!.0
-            mem[i.param1] = (mem1.0 % val2, mem1.1)
-        case .rcv:
-            if mem1.0 > 0 {
-                recoveredFreq = mem1.1
-                print(recoveredFreq ?? "nil")
-                break
-                // mem[i.param1] = (mem1.1!, mem1.1)//??
-            }
-        case .jgz:
-            let val2: Int = i.param2Int ?? mem[i.param2Str!]!.0
-            if mem1.0 > 0 {
-                idx += val2
+    // print("'\(instruction)' on memory \(queueIdx): \(memory)")
+    if let register = register {
+        if memory[register] == nil {
+            if register == "p" && queueIdx == 1 {
+                // print("init with 1")
+                memory[register] = 1
             } else {
-                idx += 1
+                memory[register] = 0
             }
-        }
-
-        if i.op != .jgz {
-            idx += 1
         }
     }
+
+    if let param2 = instruction.param2Str, memory[param2] == nil {
+        if param2 == "p" && queueIdx == 1 {
+            // print("init with 1")
+            memory[param2] = 1
+        } else {
+            memory[param2] = 0
+        }
+    }
+
+    switch instruction.op {
+    case .set:
+        let value: Int = instruction.param2Int ?? memory[instruction.param2Str!]!
+        memory[register!] = value
+    case .add:
+        let memoryVal: Int = memory[register!]!
+        let value: Int = instruction.param2Int ?? memory[instruction.param2Str!]!
+        memory[register!] = memoryVal + value
+    case .mul:
+        let memoryVal: Int = memory[register!]!
+        let value: Int = instruction.param2Int ?? memory[instruction.param2Str!]!
+        memory[register!] = memoryVal * value
+    case .mod:
+        let memoryVal: Int = memory[register!]!
+        let value: Int = instruction.param2Int ?? memory[instruction.param2Str!]!
+        memory[register!] = memoryVal % value
+    case .snd:
+        let memoryVal: Int = memory[register!]!
+        valsSent[queueIdx] += 1
+        queues[otherQueueIdx].append(memoryVal)
+        // print("\(queueIdx) sending \(memoryVal) [\(idx): \(instruction)] \(memory)")
+        if locks[otherQueueIdx] {
+            print("unlock \(otherQueueIdx) [\(idx): \(instruction)]")
+        }
+        locks[otherQueueIdx] = false
+    case .rcv:
+        if queues[queueIdx].count > 0 {
+            locks[queueIdx] = false
+            // print("\(queueIdx) rceving \(queues[queueIdx].first!) [\(idx): \(instruction)] \(memory)")
+            memory[register!] = queues[queueIdx].first!
+            queues[queueIdx] = Array(queues[queueIdx].dropFirst())
+        } else {
+            print("  lock \(queueIdx) [\(idx): \(instruction)] \(memory)")
+            locks[queueIdx] = true
+            indexes[queueIdx] -= 1
+        }
+    case .jgz:
+    ///// THIS CAN BE A F*CKING INT INSTEAD OF A REGISTER!!! HAD '1' IN THE REGISTER FIRST
+        let memoryVal: Int = instruction.param1Int ?? memory[register!]!
+        if memoryVal > 0 {
+            let value: Int = instruction.param2Int ?? memory[instruction.param2Str!]!
+            indexes[queueIdx] += value
+        } else {
+            indexes[queueIdx] += 1
+        }
+    }
+
+    if instruction.op != .jgz {
+        indexes[queueIdx] += 1
+    }
+
+    memories[queueIdx] = memory
+}
+
+func solve2(fileName: String = "input.txt") {
+    let input = readTerminal(fileName)
+    instructions = input.map { Instruction(string: $0) }
+
+    while true {
+        if locks[0] && locks[1] {
+            print("DEADLOCK")
+            break
+        }
+        if indexes[0] < 0 || indexes[0] >= instructions.count {
+            print("OOB1")
+            break
+        }
+        if indexes[1] < 0 || indexes[1] >= instructions.count {
+            print("OOB2")
+            break
+        }
+
+        if !locks[0] {
+            perform(queueIdx: 0)
+        }
+        if !locks[1] {
+            perform(queueIdx: 1)
+        }
+    }
+
+    print(valsSent)
 }
 
 if CommandLine.arguments.count > 1 {
     let fileName = CommandLine.arguments[1]
-    solve1(fileName: fileName)
+    solve2(fileName: fileName)
 } else {
-    solve1()
+    solve2()
 }
