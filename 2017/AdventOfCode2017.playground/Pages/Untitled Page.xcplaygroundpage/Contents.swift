@@ -19,4 +19,35 @@ arr.index(of: "e")
 
 ints.insert(5, at: ints.count)
 3 % 2
+
+ints.filter { int in
+    ints.filter { $0 == int }.count == 1
+}
+
+struct V {
+    let x: Int
+    let y: Int
+}
+
+extension V: CustomStringConvertible {
+    var description: String {
+        return "\(x), \(y)"
+    }
+}
+
+extension V: Equatable {
+    static func ==(lhs: V, rhs)
+}
+
+extension V {
+    static func +(lhs: V, rhs: V) -> V {
+        return V(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
+    }
+}
+
+let v1 = V(x: 0,y: 1)
+let v2 = V(x: 3, y: -9)
+
+v1 + v2
+v1 == v2
 //: [Next](@next)
