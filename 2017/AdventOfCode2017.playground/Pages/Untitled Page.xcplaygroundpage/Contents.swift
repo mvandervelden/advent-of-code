@@ -35,10 +35,6 @@ extension V: CustomStringConvertible {
     }
 }
 
-extension V: Equatable {
-    static func ==(lhs: V, rhs)
-}
-
 extension V {
     static func +(lhs: V, rhs: V) -> V {
         return V(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
@@ -49,5 +45,13 @@ let v1 = V(x: 0,y: 1)
 let v2 = V(x: 3, y: -9)
 
 v1 + v2
-v1 == v2
-//: [Next](@next)
+
+var x: [Character] = ["a", "b"]
+let xx: String = x.reduce("") { (res: String, ch: Character) -> String in
+    var res = res
+    res.append(ch)
+    return res
+}
+print(xx)
+var yy = ["ab", "cd"]
+yy.joined(separator: "/")
