@@ -100,49 +100,28 @@ struct Database {
         
         var blocks: [[String]] = []
         let blocksPerRow: Int
-        let blockSize: Int
-        if size % 2 == 0 {
-            // print("! 2")
-            blockSize = 2
-            blocksPerRow = size / 2
-            // print("rows: \(rows)")
-            // print("blpr: \(blocksPerRow)")
-            for vertBlock in 0..<blocksPerRow {
-                blocks.append([])
-                for horBlock in 0..<blocksPerRow {
-                    // print("idxs: (\(vertBlock * blockSize + 1), \(horBlock * blockSize + 1))")
-                    let block: [Character] = [
-                        rows[vertBlock * blockSize][horBlock * blockSize],
-                        rows[vertBlock * blockSize][horBlock * blockSize + 1],
-                        "/",
-                        rows[vertBlock * blockSize + 1][horBlock * blockSize],
-                        rows[vertBlock * blockSize + 1][horBlock * blockSize + 1]
-                    ]
-                    blocks[vertBlock].append(String(block))
+        let blockSize: Int = size % 2 == 0 ? 2 : 3
+
+        blocksPerRow = size / blockSize
+        // print("rows: \(rows)")
+        // print("blpr: \(blocksPerRow)")
+        for vBlock in 0..<blocksPerRow {
+            blocks.append([])
+            for hBlock in 0..<blocksPerRow {
+                // print("idxs: (\(vBlock * blockSize + 1), \(hBlock * blockSize + 1))")
+                var block: [Character] = []
+                let vStartIdx = vBlock * blockSize
+                let vEndIdx = vBlock * blockSize + blockSize
+                let hStartIdx = hBlock * blockSize
+                let hEndIdx = hBlock * blockSize + blockSize
+                for i in vStartIdx..<vEndIdx {
+                    for j in hStartIdx..<hEndIdx {
+                        block.append(rows[i][j])
+                    }
+                    block.append("/")
                 }
-            }
-        } else {//size % 3 == 0
-            // print("! 3")
-            blockSize = 3
-            blocksPerRow = size / 3
-            for vertBlock in 0..<blocksPerRow {
-                blocks.append([])
-                for horBlock in 0..<blocksPerRow {
-                    let block: [Character] = [
-                        rows[vertBlock * blockSize][horBlock * blockSize],
-                        rows[vertBlock * blockSize][horBlock * blockSize + 1],
-                        rows[vertBlock * blockSize][horBlock * blockSize + 2],
-                        "/",
-                        rows[vertBlock * blockSize + 1][horBlock * blockSize],
-                        rows[vertBlock * blockSize + 1][horBlock * blockSize + 1],
-                        rows[vertBlock * blockSize + 1][horBlock * blockSize + 2],
-                        "/",
-                        rows[vertBlock * blockSize + 2][horBlock * blockSize],
-                        rows[vertBlock * blockSize + 2][horBlock * blockSize + 1],
-                        rows[vertBlock * blockSize + 2][horBlock * blockSize + 2]
-                    ]
-                    blocks[vertBlock].append(String(block))
-                }
+                _ = block.dropLast()
+                blocks[vBlock].append(String(block))
             }
         }
         return (blocks, blockSize)
@@ -223,10 +202,10 @@ func solve1(fileName: String = "input.txt") {
 
     var grid = startGrid
     print("grid: \(grid)")
-    for _ in (0..<18) {
+    for i in (0..<18) {
         grid = db.step(grid: grid)
-        print("grid: \(grid)")
-        print("1cnt: \(Rule.countOf(string: grid))")
+        // print("grid: \(grid)")
+        print("\(i): \(Rule.countOf(string: grid))")
     }
     // print(particles)
 }
