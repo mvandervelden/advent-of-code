@@ -16,16 +16,18 @@ enum Orientation {
     case n, e, s, w
 
     func turn(_ direction: Int) -> Orientation {
-        //infected == 1 == right
         //clean    == 0 == left
+        //weakened == 1 == straight
+        //infected == 2 == right
+        //flagged  == 3 == reverse
         switch (self, direction) {
-        case (.n, 1), (.s, 0):
+        case (.e, 1), (.w, 3), (.n, 2), (.s, 0):
             return .e
-        case (.n, 0), (.s, 1):
+        case (.e, 3), (.w, 1), (.n, 0), (.s, 2):
             return .w
-        case (.e, 1), (.w, 0):
+        case (.e, 2), (.w, 0), (.n, 3), (.s, 1):
             return .s
-        case (.e, 0), (.w, 1):
+        case (.e, 0), (.w, 2), (.n, 1), (.s, 3):
             return .n
         default:
             fatalError("invalid direction: \(direction)")
@@ -48,7 +50,7 @@ class Grid {
             line.map { character in 
                 switch character {
                 case "#":
-                    return 1
+                    return 2
                 default:
                     return 0
                 }
@@ -76,9 +78,9 @@ class Grid {
     func step() {
         let value = self[position.x, position.y]
         orientation = orientation.turn(value)
-        let newValue = (value + 1) % 2
+        let newValue = (value + 1) % 4
         self[position.x, position.y] = newValue
-        if newValue == 1 {
+        if newValue == 2 {
             infected += 1
         }
 
@@ -130,7 +132,7 @@ func solve1(fileName: String = "input.txt") {
     let input = readTerminal(fileName)
     let grid = Grid(string: input)
 
-    for _ in 0..<10_000 {
+    for _ in 0..<10_000_000 {
         grid.step()
         // print(grid)
         // print(grid.infected)
