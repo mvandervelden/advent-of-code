@@ -55,3 +55,14 @@ let xx: String = x.reduce("") { (res: String, ch: Character) -> String in
 print(xx)
 var yy = ["ab", "cd"]
 yy.joined(separator: "/")
+
+x.max { (lhs, rhs) -> Bool in
+    lhs.hashValue > rhs.hashValue
+}
+yy.remove(at: yy.index(of: "ab")!)
+var b: [Int: Int] = [9: 99]
+b.removeValue(forKey: 9)
+x.insert("x", at: 0)
+b.keys.contains(9)
+
+
