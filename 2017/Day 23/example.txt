@@ -1,0 +1,32 @@
+set b 84        var b = 84
+set c b         var c = b
+jnz a 2         if a != 0 { instr5() }
+jnz 1 5         instr9()
+mul b 100       instr5() { b *= 100
+sub b -100000   b += 100_000
+set c b         c = b
+sub c -17000    c += 17_000; instr(9)
+set f 1         instr(9) { var f = 1
+set d 2         var d = 2 instr11()
+set e 2         instr11() { var e = 2 instr12()
+set g d         instr12() { var g = d
+mul g e         g *= e
+sub g b         g -= b
+jnz g 2         if g != 0 { instr17() }
+set f 0         f = 0 instr17()
+sub e -1        instr17() { e -= -1
+set g e         g = e
+sub g b         g -= b
+jnz g -8        if g != 0 { instr12() }
+sub d -1        d += 1
+set g d         g = d
+sub g b         g -= b
+jnz g -13       if g != 0 { instr11() }
+jnz f 2         if f != 0 { instr27() }
+sub h -1        h += 1 instr27()
+set g b         instr27() { g = b
+sub g c         g -= c
+jnz g 2         if g != 0 { instr31() }
+jnz 1 3         EXIT()
+sub b -17       instr31() { b += 17
+jnz 1 -23       instr9()
