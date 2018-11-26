@@ -1,0 +1,18 @@
+# Advent of Code 2018 Plan
+
+Langs:
+- Swift
+- ObjC
+- C
+- Ruby
+- Java
+- Kotlin
+- Javascript
+- Coffeescript
+- Typescript
+- Go
+- Haskell
+- Prolog
+- Lisp
+- Perl
+- 
