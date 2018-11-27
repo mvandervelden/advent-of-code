@@ -1,21 +1,47 @@
+import java.io.*;
+// Running:
+// $ javac example.java
+// $ java Example [inputfilename]
+// If no argument provided, it takes "input.txt"
+
 public class Example {
 
-    public void solve() {
-        try(BufferedReader br = new BufferedReader(new FileReader("file.txt"))) {
+    public String solve(String filename) {
+        String input = readFile(filename);
+        //TODO solve
+        return input;
+    }
+
+    private String readFile(String filename) {
+        try(BufferedReader br = new BufferedReader(new FileReader(filename))) {
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
-        
+
             while (line != null) {
                 sb.append(line);
                 sb.append(System.lineSeparator());
                 line = br.readLine();
             }
-            String everything = sb.toString();
+
+            return sb.toString();
+        } catch (Exception e) {
+            System.err.print(e);
+            return "Failed";
         }
     }
 
     public static void main(String[] args) {
-        // Prints "Hello, World" to the terminal window.
-        System.out.println("Hello, World");
+        Example sample = new Example();
+
+        String filename;
+        if(args.length > 0) {
+            filename = args[0];
+        } else {
+            filename = "input.txt";
+        }
+
+        String result = sample.solve(filename);
+
+        System.out.println(result);
     }
 }
