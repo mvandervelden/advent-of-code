@@ -1,11 +1,12 @@
 # Advent of Code 2018 Plan
 
 Langs:
-- Swift
-- ObjC
+- Swift√
+- ObjC√
 - C
-- Ruby
-- Java
+- Ruby√
+- Java√
+- Python√
 - Kotlin
 - Javascript
 - Coffeescript
