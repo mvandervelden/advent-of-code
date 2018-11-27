@@ -15,4 +15,7 @@ Langs:
 - Prolog
 - Lisp
 - Perl
-- 
+- Scala
+- ...
+
+ See lib folder for examples
