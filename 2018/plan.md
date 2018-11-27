@@ -7,7 +7,7 @@ Langs:
 - Ruby√
 - Java√
 - Python√
-- Kotlin
+- Kotlin√
 - Javascript
 - Coffeescript
 - Typescript
