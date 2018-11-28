@@ -9,8 +9,8 @@ Langs:
 - Python√
 - Kotlin√
 - js node.js √
-- Coffeescript
-- Typescript
+- Coffeescript√
+- Typescript√
 - Go
 - Haskell
 - Prolog
