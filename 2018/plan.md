@@ -8,7 +8,7 @@ Langs:
 - Java√
 - Python√
 - Kotlin√
-- Javascript
+- js node.js √
 - Coffeescript
 - Typescript
 - Go

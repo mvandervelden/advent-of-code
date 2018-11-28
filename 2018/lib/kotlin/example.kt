@@ -3,7 +3,7 @@ import java.io.InputStream
 
 // Running:
 // $ kotlinc example.kt -include-runtime -d example.jar
-// $ java -jar example.jar
+// $ java -jar example.jar [inputfilename]
 
 class Solver {
     fun solve(filename: String): String {
