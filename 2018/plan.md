@@ -11,7 +11,7 @@ Langs:
 - js node.js √
 - Coffeescript√
 - Typescript√
-- Go
+- Go √
 - Haskell
 - Prolog
 - Lisp
