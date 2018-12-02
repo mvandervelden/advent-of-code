@@ -8,42 +8,36 @@ class Solver {
 
     func solve(_ fileName: String = "input.txt") -> String {
         let input = readFile(fileName)
-        let result1 = solve1(input: input)
-        let result2 = solve2(input: input)
+        let numbers = input.split(separator: "\n").map { Int($0)! }
+        let result1 = solve1(input: numbers)
+        let result2 = solve2(input: numbers)
         return "r1: \(result1)\nr2: \(result2)"
     }
 
-    func solve1(input: String) -> String {
-        let nums: [Int] = input.split(separator: "\n").map { Int($0)! }
-        return "\(nums.reduce(0) { $0 + $1 })"
+    func solve1(input: [Int]) -> Int {
+        return input.reduce(0) { $0 + $1 }
     }
 
-    func solve2(input: String) -> String {
-        let nums: [Int] = input.split(separator: "\n").map { Int($0)! }
-        let total = Int(solve1(input: input))!
-        let frequenciesFound: [Int] = nums.reduce([0]) { (freqs: [Int], next: Int) in
-            var freqss = freqs
-            freqss.append(next + freqs.last!)
-            return freqss
+    func solve2(input: [Int]) -> Int {
+        let total = solve1(input: input)
+
+        let frequenciesFound = input.reduce([0]) { freqs, next in
+            var newFreqs = freqs
+            newFreqs.append(next + freqs.last!)
+            return newFreqs
         }
-        var result: Int? = nil
+
         var loops = 1
-        let nextNums: [Int] = Array(frequenciesFound.dropFirst())
-        
-        while result == nil {
-            var newNext: [Int] = []
-            for num in nextNums {
+
+        while true {
+            for num in frequenciesFound.dropFirst() {
                 let newFreq = num + total * loops
                 if frequenciesFound.contains(newFreq) {
-                    result = newFreq
-                    break
+                    return newFreq
                 }
-                newNext.append(newFreq)
             }
             loops += 1
-        }   
-
-        return "\(result!)"
+        }
     }
 
     private func readFile(_ fileName: String) -> String {
