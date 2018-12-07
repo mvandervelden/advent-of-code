@@ -62,11 +62,7 @@ class Solver {
         let areas: [Int] = nonInfinites.map { (id: String) in
             return matrix.reduce(0) { (sum: Int, row: [(label: String, x: Int, y: Int)]) in
                 return sum + row.reduce(0) { (sum: Int, item: (label: String, x: Int, y: Int)) in
-                    if item.label == id {
-                        return sum + 1
-                    }
-
-                    return sum
+                    return sum + (item.label == id ? 1 : 0)
                 }
             }
         }  
@@ -75,33 +71,32 @@ class Solver {
     }
 
     private func solve2(input: String) -> String {
-       let coordinates: [(id: String, x: Int, y: Int)] = input.split(separator: "\n").map { $0.split(separator: ",") }.enumerated().map { (id: String($0.offset), x: Int($0.element[0])!, y: Int($0.element[1].dropFirst())!) }
-        let bounds = (minx: coordinates.min { $0.x < $1.x }!.x, miny: coordinates.min { $0.y < $1.y }!.y, maxx: coordinates.max { $0.x < $1.x }!.x, maxy: coordinates.max { $0.y < $1.y }!.y)
-        // print(bounds)
-        // print(coordinates)
-
-        var matrix: [[(label: String, x: Int, y: Int)]] = (bounds.minx...bounds.maxx).map { x in
-            return (bounds.miny...bounds.maxy).map { y in 
-                return (label: .none, x: x, y: y)
-            }
-        }
-
-        // print(matrix.count)
-        // print(matrix[0].count)
+       let matrix = self.matrix(fromInput: input)
 
         var regionSize = 0
 
-        for row in matrix.enumerated() {
-            for col in row.element.enumerated() {
-                let totalDistance = coordinates.map { distance(coordinate: $0, matrixPoint: col.element) }.reduce(0, +)
+        for row in matrix {
+            for col in row {
+                let totalDistance = coordinates.map { distance(coordinate: $0, matrixPoint: col) }.reduce(0, +)
 
-                if totalDistance < 10_000 {
+                if totalDistance < (input == "example.txt" ? 32 : 10_000) {
                     regionSize += 1
                 }
             }
         }
 
         return "\(regionSize)"
+    }
+
+    func matrix(fromInput input: String) -> [[(label: String, x: Int, y: Int)]] {
+        let coordinates: [(id: String, x: Int, y: Int)] = input.split(separator: "\n").map { $0.split(separator: ",") }.enumerated().map { (id: String($0.offset), x: Int($0.element[0])!, y: Int($0.element[1].dropFirst())!) }
+        let bounds = (minx: coordinates.min { $0.x < $1.x }!.x, miny: coordinates.min { $0.y < $1.y }!.y, maxx: coordinates.max { $0.x < $1.x }!.x, maxy: coordinates.max { $0.y < $1.y }!.y)
+
+        let matrix: [[(label: String, x: Int, y: Int)]] = (bounds.minx...bounds.maxx).map { x in
+            return (bounds.miny...bounds.maxy).map { y in 
+                return (label: .none, x: x, y: y)
+            }
+        }
     }
 
     private func readFile(_ fileName: String) -> String {
