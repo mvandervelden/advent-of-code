@@ -34,12 +34,11 @@ class Solver {
 
     func solve(_ fileName: String = "input.txt") -> String {
         let input = readFile(fileName)
-        let result1 = solve1(input: input)
-        // let result2 = solve2(input: input)
-        return "\(result1)"
+        return solve1(input: input)
     }
 
     var tree: [Int: Node] = [:]
+    
     var _curID: Int = 0
     var currentID: Int {
         let id = _curID
@@ -50,7 +49,6 @@ class Solver {
     private func solve1(input: String) -> String {
         let treeInput = input.dropLast().split(separator: " ").map { Int($0)! }
         nextNode(input: treeInput, pendingChildren: [], pendingMetadata: [], currentNode: [], depth: -2)
-        // print(tree)
         return "r1: \(tree.reduce(0) { return $0 + $1.value.totalMetadata })\nr2: \(tree[0]!.value(tree: tree))"
     }
 
