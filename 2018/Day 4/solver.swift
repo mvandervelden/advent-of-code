@@ -30,15 +30,6 @@ extension String {
 
         return startIndex..<stopIndex
     }
-
-    static let regex = try! NSRegularExpression(pattern: "\\[(.+)\\] (.*)", options: [])
-    static let actionRegex = try! NSRegularExpression(pattern: "Guard #([0-9]+) begins shift", options: [])
-    static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter
-    }()
 }
 
 class Solver {
@@ -61,11 +52,11 @@ class Solver {
         let action: Action
 
         init(line: String) {
-            guard let match = String.regex.matches(in: line, options: [] as NSRegularExpression.MatchingOptions, range:line.nsrange).first else {
+            guard let match = Solver.regex.matches(in: line, options: [] as NSRegularExpression.MatchingOptions, range:line.nsrange).first else {
                 fatalError("No match found")
             }
 
-            date = String.dateFormatter.date(from: line.substring(with: match.range(at: 1))!)!
+            date = Solver.dateFormatter.date(from: line.substring(with: match.range(at: 1))!)!
             let entry = String(line.substring(with: match.range(at: 2))!)
             
             if entry.contains("wakes up") {
@@ -73,7 +64,7 @@ class Solver {
             } else if entry.contains("falls asleep") {
                 action = .fallAsleep
             } else {
-                guard let actionMatch = String.actionRegex.matches(in: entry, options: [] as NSRegularExpression.MatchingOptions, range: entry.nsrange).first else {
+                guard let actionMatch = Solver.actionRegex.matches(in: entry, options: [] as NSRegularExpression.MatchingOptions, range: entry.nsrange).first else {
                     fatalError("No match found")
                 }
 
@@ -84,9 +75,46 @@ class Solver {
         }
 
         var description: String {
-            return "\(String.dateFormatter.string(from: date)): \(action)"
+            return "\(Solver.dateFormatter.string(from: date)): \(action)"
         }
     }
+
+    struct Night: CustomStringConvertible {
+        let guardID: Int
+        
+        var timestamps: [Timestamp] = []
+        var sleepDuration = 0
+        var sleepRanges: [Range<Int>] = []
+
+        var description: String {
+            return "G:\(guardID), sleep:\(sleepDuration)"
+        }
+
+        init(guardID: Int) {
+            self.guardID = guardID
+        }
+    }
+
+    struct Guard {
+        let id: Int
+        var sleepDuration = 0
+        var sleepRanges: [Range<Int>] = []
+
+        init(id: Int) {
+            self.id = id
+        }
+    }
+
+    let calendar = Calendar.current
+    static let regex = try! NSRegularExpression(pattern: "\\[(.+)\\] (.*)", options: [])
+    static let actionRegex = try! NSRegularExpression(pattern: "Guard #([0-9]+) begins shift", options: [])
+    
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter
+    }()
 
     func solve(_ fileName: String = "input.txt") -> String {
         let input = readFile(fileName)
@@ -99,71 +127,72 @@ class Solver {
         let calendar = Calendar.current
 
         let lines = input.split(separator: "\n")
-        
-        let timestamps = lines.map { line in
-            return Timestamp(line: String(line))
-        }
-
+        let timestamps = lines.map { Timestamp(line: String($0)) }
+            
         let sortedStamps = timestamps.sorted { lhs, rhs in
             lhs.date < rhs.date
         }
         
-        var nights: [[Timestamp]] = []
-        var sleeps: [Int] = []
-        var ranges: [[Range<Int>]] = []
-        var nextRange: [Range<Int>] = []
-        var guards: [Int] = [-1]
-        var nextNight: [Timestamp] = []
-        var sleep = 0
+        // var nights: [[Timestamp]] = []
+        // var sleeps: [Int] = []
+        // var ranges: [[Range<Int>]] = []
+        // var nextRange: [Range<Int>] = []
+        // var guards: [Int] = [-1]
+        // var nextNight: [Timestamp] = []
+        // var sleep = 0
         var sleepTime: Date = Date()
+
+        var nights: [Night] = []
+        var nextNight: Night! = nil 
         sortedStamps.forEach { stamp in
             switch stamp.action {
             case .beginShift(let guardID):
-                nights.append(nextNight)
-                ranges.append(nextRange)
-                nextNight = [stamp]
-                guards.append(guardID)
-                sleeps.append(sleep)
-                sleep = 0
-                nextRange = []
-                sleepTime = Date()
+                if let next = nextNight {
+                    //TODO?
+                    nights.append(next)
+                }
+                // nights.append(nextNight)
+                // ranges.append(nextRange)
+                // sleeps.append(sleep)
+
+                nextNight = Night(guardID: guardID)
+                nextNight.timestamps.append(stamp)
             case .fallAsleep:
+                nextNight.timestamps.append(stamp)
                 sleepTime = stamp.date
-                nextNight.append(stamp)
             case .wakeUp:
-                nextRange.append(calendar.component(.minute, from: sleepTime)..<calendar.component(.minute, from: stamp.date))
-                sleep += Int(stamp.date.timeIntervalSinceReferenceDate - sleepTime.timeIntervalSinceReferenceDate) / 60
-                nextNight.append(stamp)
+                nextNight.sleepRanges.append(calendar.component(.minute, from: sleepTime)..<calendar.component(.minute, from: stamp.date))
+                nextNight.sleepDuration += Int(stamp.date.timeIntervalSinceReferenceDate - sleepTime.timeIntervalSinceReferenceDate) / 60
+                nextNight.timestamps.append(stamp)
             }
         }
 
-        // sortedStamps.forEach { print($0) }
+        nights.append(nextNight!)
 
-        let guardSleeps: [Int: Int] = zip(guards, sleeps).reduce(into: [:]) { counts, entry in
-           counts[entry.0, default: 0] += entry.1
+        let guards: [Int: Guard] = nights.reduce(into: [:]) { gs, night in 
+            gs[night.guardID, default: Guard(id: night.guardID)].sleepDuration += night.sleepDuration
+            gs[night.guardID]!.sleepRanges.append(contentsOf: night.sleepRanges)
         }
+        // let guardSleeps: [Int: Int] = zip(guards, sleeps).reduce(into: [:]) { counts, entry in
+        //    counts[entry.0, default: 0] += entry.1
+        // }
 
-        // print(ranges[1])
-        let guardSleepRanges: [Int: [Range<Int>]] = zip(guards, ranges).reduce(into: [:]) { dayRanges, entry in
-            dayRanges[entry.0, default: []].append(contentsOf: entry.1)
-        }
+        // let guardSleepRanges: [Int: [Range<Int>]] = zip(guards, ranges).reduce(into: [:]) { dayRanges, entry in
+        //     dayRanges[entry.0, default: []].append(contentsOf: entry.1)
+        // }
 
-        let max = guardSleeps.max { lhs, rhs in lhs.value < rhs.value }!
+        let max = guards.max { lhs, rhs in lhs.value.sleepDuration < rhs.value.sleepDuration }!.value
+        // let max = guardSleeps.max { lhs, rhs in lhs.value < rhs.value }!
         
-        let maxRanges = guardSleepRanges[max.0]!
-        // print(maxRanges)
+        let maxRanges = max.sleepRanges
         let hist = maxRanges.reduce(into: [:]) { histogram, range in
             range.forEach {
                 histogram[$0, default: 0] += 1
             }
         }
-        // print(hist)
-        let maxMin = hist.max { lhs, rhs in lhs.value < rhs.value }!
+        let maxMinutes = hist.max { lhs, rhs in lhs.value < rhs.value }!
 
-        // zip(zip(guards, sleeps), nights).forEach { print($0) }
-        // print(guardSleeps)
-        // print(max)
-        return "\(max.0 * maxMin.0)"
+        return "\(max.id * maxMinutes.0)"
     }
 
     private func solve2(input: String) -> String {
@@ -208,34 +237,19 @@ let calendar = Calendar.current
             }
         }
 
-        // sortedStamps.forEach { print($0) }
-
-        // let guardSleeps: [Int: Int] = zip(guards, sleeps).reduce(into: [:]) { counts, entry in
-        //    counts[entry.0, default: 0] += entry.1
-        // }
-
-        // print(ranges[1])
         let guardSleepRanges: [Int: [Range<Int>]] = zip(guards, ranges).reduce(into: [:]) { dayRanges, entry in
             if !entry.1.isEmpty {
                 dayRanges[entry.0, default: []].append(contentsOf: entry.1)
             }
         }
 
-        // let max = guardSleeps.max { lhs, rhs in lhs.value < rhs.value }!
-        
-        // let maxRanges = guardSleepRanges[max.0]!
-        // print(maxRanges)
-
         let guardMaxMinutes: [(Int, (Int, Int))] = guardSleepRanges.map { guardSleep in
-            print(guardSleep)
             let hist = guardSleep.value.reduce(into: [:]) { histogram, range in
                 range.forEach {
                     histogram[$0, default: 0] += 1
                 }
             }
-            // print(hist)
             let maxMinute = hist.max { lhs, rhs in lhs.value < rhs.value }!
-            print(maxMinute)
             return (guardSleep.key, maxMinute)
         }
 
@@ -243,10 +257,6 @@ let calendar = Calendar.current
             lhs.1.1 < rhs.1.1
         }!
 
-        print(maxGuard)
-        // zip(zip(guards, sleeps), nights).forEach { print($0) }
-        // print(guardSleeps)
-        // print(max)
         return "\(maxGuard.0 * maxGuard.1.0)"    
     }
 
