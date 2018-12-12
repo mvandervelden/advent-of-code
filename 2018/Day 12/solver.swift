@@ -8,19 +8,6 @@ let planted: Character = "#"
 let empty: Character = "."
 
 class Solver {
-    // struct Pot: CustomStringConvertible {
-    //     let id: Int
-    //     let state: Bool
-
-    //     var description: String {
-    //         return String(state ? planted : empty)
-    //     }
-
-    //     func copy(state: Bool) -> Pot {
-    //         return Pot(id: id, state: state)
-    //     }
-    // }
-
     struct Rule: CustomStringConvertible {
         let input: [Bool]
         let output: Bool
@@ -36,7 +23,6 @@ class Solver {
         }
 
         func match(_ t: [Bool]) -> Bool? {
-            // print(t, input, output)
             return t == input ? output : nil
         }
     }
@@ -46,7 +32,6 @@ class Solver {
         let result1 = solve1(input: input, generations: 20)
         let result2 = solve1(input: input, generations: 50_000_000_000)
         return "r1: \(result1)\nr2: \(result2)"
-        // return "r1: \(result1)"
     }
 
     private func solve1(input: String, generations: Int) -> String {
@@ -63,7 +48,6 @@ class Solver {
         var curResult = currentState.enumerated().reduce(0) { sum, pot in sum + (pot.element ? pot.offset - offset : 0) }
         var diff = 0
         (1...min(generations, 100)).forEach { g in
-            // if g % 100_000 == 0 { print(g) }
             // currentState.forEach { print($0 ? "#" : ".", terminator:"") }
             // print("")
 
