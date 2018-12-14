@@ -6,24 +6,73 @@ import Foundation
 
 class Solver {
 
-    func solve(_ fileName: String = "input.txt") -> String {
-        let input = readFile(fileName)
+    func solve(_ input: String = "768071") -> String {
+        // let input = readFile(fileName)
         let result1 = solve1(input: input)
         let result2 = solve2(input: input)
         return "r1: \(result1)\nr2: \(result2)"
     }
 
     private func solve1(input: String) -> String {
-        let lines = input.split(separator: "\n")
-        
-        return ""
+        let expected = Int(input)!
+        var result = [3, 7]
+        var e1 =  0
+        var e2 = 1
+
+        while result.count < expected + 10 { 
+            let res1 = result[e1]
+            let res2 = result[e2]
+            let recipeRes = res1 + res2
+            if recipeRes >= 10 {
+                result.append(1)
+            }
+            result.append(recipeRes % 10)
+            
+            e1 = (e1 + 1 + res1) % result.count
+            e2 = (e2 + 1 + res2) % result.count
+
+            // print(result)
+        }
+    
+        return "\(result[expected..<(expected+10)].reduce("", { $0 + "\($1)"}))"
     }
 
     private func solve2(input: String) -> String {
-        let lines = input.split(separator: "\n")
+        let expected = Array(input).map { Int(String($0))! }
+        var result = [3, 7]
+        var e1 = 0
+        var e2 = 1
 
-        return ""
-    }
+        var resultIndex: Int? = nil
+        while resultIndex == nil {
+            
+            if result.count > expected.count + 1 {
+                let index = ((result.count - expected.count - 2)...(result.count - expected.count)).filter { ind in 
+                    Array(result[ind..<(ind + expected.count)]) == expected
+                }
+                if index.count > 0 {
+                    print(index)
+                    resultIndex = index[0]
+                    break
+                }
+            }
+            
+            let res1 = result[e1]
+            let res2 = result[e2]
+            let recipeRes = res1 + res2
+            if recipeRes >= 10 {
+                result.append(1)
+            }
+            result.append(recipeRes % 10)
+            
+            e1 = (e1 + 1 + res1) % result.count
+            e2 = (e2 + 1 + res2) % result.count
+
+            // print(result)
+        }
+    
+        return "\(resultIndex!)"
+        }
 
     private func readFile(_ fileName: String) -> String {
         let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
