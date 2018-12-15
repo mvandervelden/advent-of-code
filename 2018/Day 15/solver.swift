@@ -92,16 +92,21 @@ class Solver {
             printField()
             let players = getPlayers()
             for player in players {
-                print("player", player)
-                guard hasOpponents(player, players: players) else {
+                if player.hp < 0 {
+                    //Player is out
+                    continue
+                }
+                // print("player", player)
+                guard hasOpponents(player) else {
                     let sum = hpSum()
+                    printField()
                     print("rounds:", no_rounds)
                     print("sum", sum)
                     return "\(no_rounds * sum)"
                 }
 
                 if let oppInRange = oppInRange(player) {
-                    print("attack")
+                    // print("attack")
                     attack(oppInRange, by: player)
                     // printField()
                     continue
@@ -109,15 +114,15 @@ class Solver {
                 
                 let openTargetSquares = self.openTargetSquares(player)
                 if openTargetSquares.isEmpty { 
-                    print("all target squares occupied")
+                    // print("all target squares occupied")
                     //Cannot move
                     continue 
                 }
 
-                print("moving to", openTargetSquares)
+                // print("moving to", openTargetSquares)
                 //MOVE
                 guard let nextLocation = findPath(player, targets: openTargetSquares) else {
-                    print("no target squares accessible")
+                    // print("no target squares accessible")
                     //Cannot reach target locations
                     continue
                 }
@@ -132,15 +137,15 @@ class Solver {
                 field[nextLocation.y][nextLocation.x] = .player(player)
                 field[currentLocation.y][currentLocation.x] = .empty
                 
-                print("moved \(player)")
+                // print("moved \(player)")
                 if let oppInRange = oppInRange(player) {
-                    print("attack")
+                    // print("attack")
                     attack(oppInRange, by: player)
                 }
                 // printField()
             }
             no_rounds += 1
-            // if no_rounds == 25 { stillGoing = false }
+            // if no_rounds == 1 { stillGoing = false }
         }
         printField()
         return ""
@@ -160,9 +165,14 @@ class Solver {
         return players
     }
 
-    func hasOpponents(_ player: Player, players: [Player]) -> Bool {
-        let opponentType: PType = player.type == .elve ? .goblin : .elve
-        return players.contains { $0.type == opponentType }
+    func hasOpponents(_ player: Player) -> Bool {
+        let opp = player.opponentType
+        return field.contains { return $0.contains { cell in
+            switch cell {
+                case .player(let p) where p.type == opp: return true
+                default: return false 
+            }
+        }}
     }
 
     func openTargetSquares(_ player: Player) -> [Pt] {
@@ -173,24 +183,24 @@ class Solver {
                     // print(player, row.offset, cell.offset, cell.element)
 
                     if field[row.offset - 1][cell.offset].pType == player.opponentType {
-                        // print("appending for", field[row.offset - 1][cell.offset])
+                        // print("appending for", cell.offset, row.offset - 1)
                         openTargetSquares.insert(Pt(x: cell.offset, y: row.offset))
-                        break
+                        continue
                     }
                     if field[row.offset + 1][cell.offset].pType == player.opponentType {
-                        // print("appending for", field[row.offset + 1][cell.offset])
+                        // print("appending for", cell.offset, row.offset + 1)
                         openTargetSquares.insert(Pt(x: cell.offset, y: row.offset))
-                        break
+                        continue
                     }
                     if field[row.offset][cell.offset - 1].pType == player.opponentType {
-                        // print("appending for", field[row.offset][cell.offset - 1])
+                        // print("appending for", cell.offset - 1, row.offset)
                         openTargetSquares.insert(Pt(x: cell.offset, y: row.offset))
-                        break
+                        continue
                     }
                     if field[row.offset][cell.offset + 1].pType == player.opponentType {
-                        // print("appending for", field[row.offset][cell.offset + 1])
+                        // print("appending for", cell.offset + 1, row.offset)
                         openTargetSquares.insert(Pt(x: cell.offset, y: row.offset))
-                        break
+                        continue
                     }
                 }
             }
@@ -273,6 +283,7 @@ class Solver {
                 let rhsScore = fScore[$1] ?? Int.max
                 return lhsScore < rhsScore || (lhsScore == rhsScore && ($0.y < $1.y || ($0.y == $1.y && $0.x < $1.x)))
             }!
+            // let current = openSet.min { fScore[$0] ?? Int.max < fScore[$1] ?? Int.max }!
             // print("current", current)
             if current == goal {
                 return reconstruct(cameFrom, current: current)
