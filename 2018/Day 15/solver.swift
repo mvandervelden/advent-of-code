@@ -99,7 +99,6 @@ class Solver {
                 // print("player", player)
                 guard hasOpponents(player) else {
                     let sum = hpSum()
-                    printField()
                     print("rounds:", no_rounds)
                     print("sum", sum)
                     return "\(no_rounds * sum)"
@@ -300,7 +299,7 @@ class Solver {
                     continue
                 }
 
-                let tentativeG = gScore[current]! + 10000 + neighbor.y * 100 + neighbor.x * 100
+                let tentativeG = gScore[current]! + 1000000 + neighbor.y * 100 + neighbor.x
 
                 if !openSet.contains(neighbor) {
                     openSet.insert(neighbor)
