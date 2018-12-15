@@ -15,12 +15,12 @@ class Solver {
 
     func solve(_ fileName: String = "input.txt") -> String {
         let input = readFile(fileName)
-        let result1 = solve1(input: input)
+        // let result1 = solve1(input: input)
         let result2 = solve2(input: input)
-        return "r1: \(result1)\nr2: \(result2)"
+        // return "r1: \(result1)\nr2: \(result2)"
+        return "r2: \(result2)"
     }
 
-    let ap = 3
     var field: [[Square]] = []
 
     enum Square: CustomStringConvertible {
@@ -28,12 +28,12 @@ class Solver {
         case empty
         case player(Player)
 
-        init(ch: Character, x: Int, y: Int) {
+        init(ch: Character, x: Int, y: Int, strength: Int) {
             switch ch {
                 case "#": self = .wall
                 case ".": self = .empty
-                case "E": self = .player(Player(type: .elve, x: x, y: y))
-                case "G": self = .player(Player(type: .goblin, x: x, y: y))
+                case "E": self = .player(Player(type: .elve, x: x, y: y, strength: strength))
+                case "G": self = .player(Player(type: .goblin, x: x, y: y, strength: 3))
                 default: fatalError("Unexpected Square: \(ch)")
             }
         }
@@ -63,11 +63,13 @@ class Solver {
         var hp = 200
         var x: Int
         var y: Int
+        let strength: Int
 
-        init(type: PType, x: Int, y: Int) {
+        init(type: PType, x: Int, y: Int, strength: Int) {
             self.type = type
             self.x = x
             self.y = y
+            self.strength = strength
         }
 
         var opponentType: PType {
@@ -82,14 +84,39 @@ class Solver {
         }
     }
 
-    private func solve1(input: String) -> String {
+    private func solve1(input: String, strength: Int = 3) -> String {
         let lines = input.split(separator: "\n")
-        field = lines.enumerated().map { row in Array(row.element).enumerated().map { el in Square(ch: el.element, x: el.offset, y: row.offset) } }
-        
+        field = lines.enumerated().map { row in Array(row.element).enumerated().map { el in Square(ch: el.element, x: el.offset, y: row.offset, strength: strength) } }
+        let result = solve()
+        return result.part1
+    }
+
+
+    private func solve2(input: String) -> String {
+        let lines = input.split(separator: "\n")
+        (33..<34).forEach { i in 
+            var noElves = 0
+            field = lines.enumerated().map { row in Array(row.element).enumerated().map { el in 
+                let s = Square(ch: el.element, x: el.offset, y: row.offset, strength: i) 
+                switch s {
+                case .player(let p) where p.type == .elve:
+                    noElves += 1
+                default: break
+                }
+                return s
+            } }
+            print("No Elves: \(noElves)")
+            let result = solve()
+            print(result)
+        }
+        return ""
+    }
+
+    func solve() -> (part1: String, part2: Int) {
         var stillGoing = true
         var no_rounds = 0
         while stillGoing {
-            printField()
+            // printField()
             let players = getPlayers()
             for player in players {
                 if player.hp < 0 {
@@ -101,7 +128,21 @@ class Solver {
                     let sum = hpSum()
                     print("rounds:", no_rounds)
                     print("sum", sum)
-                    return "\(no_rounds * sum)"
+                    let noElves: Int
+                    if player.type == .goblin {
+                        noElves = 0
+                    } else {
+                        noElves = field.reduce(0) { sum, row in 
+                            return sum + row.filter { cell in 
+                                switch cell {
+                                case .player(let p) where p.type == .elve: return true
+                                default: return false
+                                }
+                            }.count
+                        }
+                    }
+                    print("part1", no_rounds * sum, "part2:", noElves)
+                    return (part1: "\(no_rounds * sum)", part2: noElves)
                 }
 
                 if let oppInRange = oppInRange(player) {
@@ -146,8 +187,8 @@ class Solver {
             no_rounds += 1
             // if no_rounds == 1 { stillGoing = false }
         }
-        printField()
-        return ""
+        // printField()
+        return (part1: "", part2: 0)
     }
 
     func getPlayers() -> [Player] {
@@ -244,7 +285,7 @@ class Solver {
     }
 
     func attack(_ opponent: Player, by player: Player) {
-        opponent.hp -= 3
+        opponent.hp -= player.strength
         if opponent.hp <= 0 {
             field[opponent.y][opponent.x] = .empty
         }
@@ -376,13 +417,6 @@ class Solver {
             }.joined(separator: ", ")
             print(p)
         }
-    }
-
-
-    private func solve2(input: String) -> String {
-        // let lines = input.split(separator: "\n")
-
-        return ""
     }
 
     private func readFile(_ fileName: String) -> String {
