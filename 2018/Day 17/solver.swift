@@ -41,8 +41,7 @@ class Solver {
     func solve(_ fileName: String = "input.txt") -> String {
         let input = readFile(fileName)
         let result1 = solve1(input: input)
-        let result2 = solve2(input: input)
-        return "r1: \(result1)\nr2: \(result2)"
+        return result1
     }
 
     struct Coord: CustomStringConvertible {
@@ -78,7 +77,7 @@ class Solver {
         writeGrid("input_grid.txt")
         fill()
         writeGrid()
-        return "\(waterCount())"
+        return "r1: \(waterCount()), r2: \(retainCount())"
     }
 
     func setupInput(_ input: String) {
@@ -191,7 +190,6 @@ class Solver {
             case .edge:
                 sources.removeLast()
             case .pouringWater:
-                //TODO assumption that this will only happen when backtracking
                 sources.removeLast()
             default:
                 break
@@ -211,10 +209,16 @@ class Solver {
         }
     }
 
-    private func solve2(input: String) -> String {
-        // let lines = input.split(separator: "\n")
-
-        return ""
+    func retainCount() -> Int {
+        return grid[frame.orig.y...].reduce(0) { sum, row in 
+            return sum + row.reduce(0) { rSum, cell in
+                switch cell {
+                case .stillWater:
+                    return rSum + 1
+                default: return rSum
+                }
+            }
+        }
     }
 
     func findEdges(_ coord: Coord) -> (l: Coord?, r: Coord?) {
