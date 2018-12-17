@@ -75,8 +75,9 @@ class Solver {
 
     private func solve1(input: String) -> String {
         setupInput(input)
+        writeGrid("input_grid.txt")
         fill()
-        printGrid()
+        writeGrid()
         return "\(waterCount())"
     }
 
@@ -117,7 +118,7 @@ class Solver {
         let xMax = coordList.map { $0.x }.max()!
         let yMin = coordList.map { $0.y }.min()!
         let yMax = coordList.map { $0.y }.max()!
-        frame = (orig: Coord(x: xMin - 1, y: yMin), size: Coord(x: xMax - xMin + 1, y: yMax - yMin + 1))
+        frame = (orig: Coord(x: xMin - 2, y: yMin), size: Coord(x: xMax - xMin + 2, y: yMax - yMin + 1))
         convertToGrid()
     }
 
@@ -150,20 +151,32 @@ class Solver {
             // printGrid()
             let currentSource = sources.last!
 
-            print(currentSource)
+            // print(sources)
             switch grid[currentSource.y + 1][currentSource.x] {
             case .sand:
-                print("sand")
+                // print("sand")
                 grid[currentSource.y + 1][currentSource.x] = .pouringWater
                 sources.append(Coord(x: currentSource.x, y: currentSource.y + 1))
             case .clay, .stillWater:
-                print("\(grid[currentSource.y + 1][currentSource.x])")
+                // print("\(grid[currentSource.y + 1][currentSource.x])")
                 let edges: (l: Coord?, r: Coord?) = findEdges(currentSource)
                 if let left = edges.l, let right = edges.r {
                     ((left.x + 1)..<right.x).forEach { x in
+                        if ![.sand, .pouringWater].contains(grid[left.y][x]) {
+                            print("Unexpected conversion to still water:",grid[left.y][x], "coord:", x, left.y )
+                        }
                         grid[left.y][x] = .stillWater
                     }
-                    sources.removeLast()
+                    sources.removeAll { source in
+                        if ((left.x + 1)..<right.x).contains(source.x) && source.y == left.y {
+                            if ![.pouringWater, .stillWater].contains(grid[source.y][source.x]) {
+                                print("removing source", source, "was:", grid[source.y][source.x])
+                            }
+                            return true
+                        }
+                        
+                        return false
+                    }
                 } else {
                     sources.removeLast()
                     if case .sand = grid[currentSource.y][currentSource.x + 1] {
@@ -187,7 +200,7 @@ class Solver {
     }
 
     func waterCount() -> Int {
-        return grid.reduce(0) { sum, row in 
+        return grid[frame.orig.y...].reduce(0) { sum, row in 
             return sum + row.reduce(0) { rSum, cell in
                 switch cell {
                 case .stillWater, .pouringWater:
@@ -223,8 +236,13 @@ class Solver {
                 default:
                     continue
                 }
+            case .edge:
+                return nil
             default:
-                print("Unexpected findEdge value: \(grid[coord.y][x])")
+                print("Unexpected findEdge value:", grid[coord.y][x])
+                print("Finding edge for: ", coord)
+                print("Currently checking: ", x, coord.y)
+                writeGrid()
                 fatalError()
                 continue
             }
@@ -239,6 +257,23 @@ class Solver {
         }
         let content = try! String(contentsOf: fileURL)
         return content
+    }
+
+    func writeGrid(_ filename: String = "output.txt") {
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)    
+
+        let fileURL = currentDirectoryURL.appendingPathComponent(filename)
+
+        let string: String = grid.map { row in 
+            return row.reduce("", { $0 + $1.description })
+        }.joined(separator: "\n")
+
+        do {
+            try string.write(to: fileURL, atomically: false, encoding: .utf8)
+        }
+        catch {
+            print(error)
+        }
     }
 }
 
