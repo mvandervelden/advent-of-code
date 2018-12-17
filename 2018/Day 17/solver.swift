@@ -50,6 +50,18 @@ class Solver {
         var description: String {
             return "(\(x), \(y))"
         }
+
+        func coordBelow() -> Coord {
+            return Coord(x: x, y: y + 1)
+        }
+
+        func coordLeft() -> Coord {
+            return Coord(x: x - 1, y: y)
+        }
+        
+        func coordRight() -> Coord {
+            return Coord(x: x + 1, y: y)
+        }
     }
 
     enum Fill: CustomStringConvertible {
@@ -153,38 +165,26 @@ class Solver {
             // print(sources)
             switch grid[currentSource.y + 1][currentSource.x] {
             case .sand:
-                // print("sand")
                 grid[currentSource.y + 1][currentSource.x] = .pouringWater
-                sources.append(Coord(x: currentSource.x, y: currentSource.y + 1))
+                sources.append(currentSource.coordBelow())
             case .clay, .stillWater:
-                // print("\(grid[currentSource.y + 1][currentSource.x])")
                 let edges: (l: Coord?, r: Coord?) = findEdges(currentSource)
                 if let left = edges.l, let right = edges.r {
                     ((left.x + 1)..<right.x).forEach { x in
-                        if ![.sand, .pouringWater].contains(grid[left.y][x]) {
-                            print("Unexpected conversion to still water:",grid[left.y][x], "coord:", x, left.y )
-                        }
                         grid[left.y][x] = .stillWater
                     }
                     sources.removeAll { source in
-                        if ((left.x + 1)..<right.x).contains(source.x) && source.y == left.y {
-                            if ![.pouringWater, .stillWater].contains(grid[source.y][source.x]) {
-                                print("removing source", source, "was:", grid[source.y][source.x])
-                            }
-                            return true
-                        }
-                        
-                        return false
+                        return ((left.x + 1)..<right.x).contains(source.x) && source.y == left.y
                     }
                 } else {
                     sources.removeLast()
                     if case .sand = grid[currentSource.y][currentSource.x + 1] {
                         grid[currentSource.y][currentSource.x + 1] = .pouringWater
-                        sources.append(Coord(x: currentSource.x + 1, y: currentSource.y))
+                        sources.append(currentSource.coordRight())
                     }
                     if case .sand = grid[currentSource.y][currentSource.x - 1] {
                         grid[currentSource.y][currentSource.x - 1] = .pouringWater
-                        sources.append(Coord(x: currentSource.x - 1, y: currentSource.y))
+                        sources.append(currentSource.coordLeft())
                     }
                 }
             case .edge:
@@ -243,11 +243,6 @@ class Solver {
             case .edge:
                 return nil
             default:
-                print("Unexpected findEdge value:", grid[coord.y][x])
-                print("Finding edge for: ", coord)
-                print("Currently checking: ", x, coord.y)
-                writeGrid()
-                fatalError()
                 continue
             }
         }
