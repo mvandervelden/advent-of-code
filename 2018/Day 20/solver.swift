@@ -14,7 +14,7 @@ extension String {
     /// or `nil` if the range can't be converted.
     func substring(with nsrange: NSRange) -> String? {
         guard let range = Range(nsrange) else { return nil }
-        
+
         let startIndex = self.index(self.startIndex, offsetBy: range.startIndex)
         let stopIndex = self.index(self.startIndex, offsetBy: range.startIndex + range.count)
         return String(self[startIndex..<stopIndex])
@@ -24,7 +24,7 @@ extension String {
     /// or `nil` if the range can't be converted.
     func range(from nsrange: NSRange) -> Range<Index>? {
         guard let range = Range(nsrange) else { return nil }
-        
+
         let startIndex = self.index(self.startIndex, offsetBy: range.startIndex)
         let stopIndex = self.index(self.startIndex, offsetBy: range.startIndex + range.count)
 
@@ -32,11 +32,11 @@ extension String {
     }
 }
 
-let optionalLoopRx = try! NSRegularExpression(pattern: "\\((.+)\\|\\)", options: [])
-let branchRx = try! NSRegularExpression(pattern: "\\((.+)\\|(.+)\\)", options: [])
+// let optionalLoopRx = try! NSRegularExpression(pattern: "^\\((.+)\\|\\)([NWES]*\\$)", options: [])
+// let branchRx = try! NSRegularExpression(pattern: "^\\(([NWES]*)\\|(.+)\\)([NWES]*\\$)", options: [])
 
 class Solver {
-    struct Coord: CustomStringConvertible {
+    struct Coord: CustomStringConvertible, Hashable {
         let x, y: Int
 
         var description: String {
@@ -54,12 +54,12 @@ class Solver {
         func left() -> Coord {
             return Coord(x: x - 1, y: y)
         }
-        
+
         func right() -> Coord {
             return Coord(x: x + 1, y: y)
         }
     }
-    
+
     var doors: [Coord: [Coord]] = [:]
 
     func solve(_ fileName: String = "input.txt") -> String {
@@ -70,48 +70,115 @@ class Solver {
     }
 
     private func solve1(input: String) -> String {
+        // print(input)
         let array = Array(input)
 
-        var i = 1
-        var currentCoord = Coord(x: 0, y: 0)
-        var nextCoord = Coord(x: 0, y: 0)
-        while true {
-            let nextChar = array[i]
-            switch nextChar {
-            case "$": break
-            case "N":
-                nextCoord = currentCoord.above()
-                doors[currentCoord, default: []].append(nextCoord)
-                doors[nextCoord, default: []].append(currentCoord)
-            case "E":
-                nextCoord = currentCoord.right()
-                doors[currentCoord, default: []].append(nextCoord)
-                doors[nextCoord, default: []].append(currentCoord
-            case "S":
-                nextCoord = currentCoord.below()
-                doors[currentCoord, default: []].append(nextCoord)
-                doors[nextCoord, default: []].append(currentCoord
-            case "W":
-                nextCoord = currentCoord.left()
-                doors[currentCoord, default: []].append(nextCoord)
-                doors[nextCoord, default: []].append(currentCoord
-            case "(":
-                let branchString = String(array[i...])
-                if let optionalLoop = optionalLoopRx.matches(in: branchString, options: [] as NSRegularExpression.MatchingOptions, range: branchString.nsrange).first {
-                    let loop = branchString.substring(with: optionalLoop.range(at: 1))!
-                    //TODO recursively solve loop
-                } else if //TODO branch
-
-            }
-        }
-        
-        return ""
+        parseDirections(Array(array[1..<(array.count-1)]), current: Coord(x: 0, y: 0))
+        let dist = findLongestRoute(current: Coord(x: 0, y: 0), cost: 0)
+        print(doors.count)
+        print("r2:", thousandSet.count)
+        return "\(dist)"
     }
 
     private func solve2(input: String) -> String {
         // let lines = input.split(separator: "\n")
 
         return ""
+    }
+
+    func parseDirections(_ directions: [Character], current: Coord) {
+        let nextChar = directions.first!
+        // print(nextChar)
+        switch nextChar {
+        case "$":
+            // print("found end")
+            return
+        case "N":
+            let nextCoord = current.above()
+            doors[current, default: []].append(nextCoord)
+            doors[nextCoord, default: []].append(current)
+            parseDirections(Array(directions[1...]), current: nextCoord)
+        case "E":
+            let nextCoord = current.right()
+            doors[current, default: []].append(nextCoord)
+            doors[nextCoord, default: []].append(current)
+            parseDirections(Array(directions[1...]), current: nextCoord)
+        case "S":
+            let nextCoord = current.below()
+            doors[current, default: []].append(nextCoord)
+            doors[nextCoord, default: []].append(current)
+            parseDirections(Array(directions[1...]), current: nextCoord)
+        case "W":
+            let nextCoord = current.left()
+            doors[current, default: []].append(nextCoord)
+            doors[nextCoord, default: []].append(current)
+            parseDirections(Array(directions[1...]), current: nextCoord)
+        case "(":
+            // print("branch", String(directions))
+            var endOfBranch: Int? = nil
+            var depth = 0
+            for dir in directions.enumerated() { 
+                // print(dir, depth)
+                switch dir.element {
+                case "(": depth += 1
+                case ")":
+                    // print(dir, depth)
+
+                    depth -= 1
+                    // print(dir, depth)
+
+                    if depth == 0 {
+                        // print("break", dir.offset)
+                        endOfBranch = dir.offset
+                        break
+                    }
+                default: continue
+                }
+                if endOfBranch != nil { break }
+            }
+            // print(endOfBranch!)
+            let rest = directions[(endOfBranch! + 1)...]
+            if directions[endOfBranch! - 1] == "|" {
+                let loop = directions[1..<(endOfBranch! - 1)]
+                // print("optionalLoop", String(loop))
+                // print("optionalLoop - rest", String(rest))
+                parseDirections(Array(loop) + Array(rest), current: current)
+                // parseDirections(Array(rest), current: current)
+            } else {
+                // branches
+                let dividers = directions.enumerated().filter { 
+                    guard $0.element == "|" else { return false }
+                    let openCount = directions[1..<$0.offset].filter { $0 == "(" }.count
+                    let closeCount = directions[1..<$0.offset].filter { $0 == ")" }.count
+                    return openCount == closeCount
+                }.map { $0.offset }
+
+                var previousDivider = 0
+                for divider in dividers {
+                    let branch = directions[(previousDivider+1)..<divider]
+                    // print("branch - ", String(firstBranch))
+                    // print("branch - rest", String(rest))
+                    parseDirections(Array(branch) + Array(rest), current: current)
+                    previousDivider = divider
+                }
+                let branch = directions[(previousDivider+1)..<endOfBranch!]
+                
+                // print("branch - last", String(secondBranch))
+                // print("branch - rest", String(rest))
+                parseDirections(Array(branch) + Array(rest), current: current)
+            }
+        default:
+            print("Unexpected characted: \(nextChar)", String(directions))
+        }
+    }
+
+    var found: Set<Coord> = []
+    var thousandSet: Set<Coord> = []
+
+    func findLongestRoute(current: Coord, cost: Int) -> Int {
+        found.insert(current)
+        if cost >= 1000 { thousandSet.insert(current) }
+        return doors[current]!.filter { !found.contains($0) }.map { findLongestRoute(current: $0, cost: cost + 1) }.max() ?? cost
     }
 
     private func readFile(_ fileName: String) -> String {
