@@ -4,6 +4,11 @@ import Foundation
 // $ swift solver.swift [inputfilename]
 // If no argument provided, it takes "input.txt"
 
+
+
+///SOLUTION PART 1: Check when on IP=28, what is register[1], that's the value register[0] should have
+///SOLUTION PART 2: collect register[1] values on IP=28, wait for a loop, then take the last one.
+
 class Solver {
 
     enum Opcode: CaseIterable {
@@ -99,19 +104,26 @@ private func solve1(input: String) -> String {
         var lastInstr = instructions[0]
         var lastIP = ip
         var lastReg1 = 0
+        var reg1Vals: Set<Int> = []
         while ip >= 0 && ip < instructions.count {
             i += 1
             lastInstr = instructions[ip]
-            print(i, "ip=\(ip)", instructions[ip], "|", register[1], register[2], "|", String(register[1], radix: 2), String(register[2], radix: 2))
+            // print(i, "ip=\(ip)", instructions[ip], "|", register[1], register[2], "|", String(register[1], radix: 2), String(register[2], radix: 2))
 
             if [28].contains(ip) {
-                print(register[1], register[1] - lastReg1, String(register[1], radix: 2))
+                print(register[1], reg1Vals.count)
                 let hadReg = lastReg1 != 0
+                let prevCount = reg1Vals.count
+                reg1Vals.insert(register[1])
+                if prevCount == reg1Vals.count {
+                    print(lastReg1)
+                    break
+                }
                 lastReg1 = register[1]
                 lastIP = ip
                 operate(instr: instructions[ip])
                 // if hadReg {
-                    break
+                    // break
                 // }
                 
                 // print(register)
