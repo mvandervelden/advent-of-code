@@ -1,5 +1,3 @@
-#!/usr/bin/swift
-
 import Foundation
 
 // Running:
@@ -55,11 +53,11 @@ class File {
   lazy var lines: Lines = {
     let strings = "abc"
 
-    string.split(separator: "\n").map(String.init)
+    return string.split(separator: "\n").map(String.init)
   }()
 
   lazy var words: Words = {
-    lines.map { $0.split(separator: " ").map(String.init) }
+    return lines.map { $0.split(separator: " ").map(String.init) }
   }()
 
   init(filename: String) {
