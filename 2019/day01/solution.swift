@@ -29,11 +29,37 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let fuel = file
+      .lines
+      .intValues
+      .map(getFuel)
+      .sum()
+    return fuel.description
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let fuel = file
+      .lines
+      .intValues
+      .map(getTotalFuel)
+      .sum()
+    return fuel.description
+  }
+
+  private func getFuel(forMass mass: Int) -> Int {
+    return max(mass / 3 - 2, 0)
+  }
+
+  private func getTotalFuel(forMass mass: Int) -> Int {
+    var mass = mass
+    var totalFuel = 0
+
+    while mass > 0 {
+      mass = getFuel(forMass: mass)
+      totalFuel += mass
+    }
+
+    return totalFuel
   }
 }
 
@@ -62,6 +88,18 @@ class File {
 
   init(filename: String) {
     self.filename = filename
+  }
+}
+
+extension Lines {
+  var intValues: [Int] {
+    return compactMap { Int($0) }
+  }
+}
+
+extension Array where Element == Int {
+  func sum() -> Int {
+    return reduce(0, +)
   }
 }
 
