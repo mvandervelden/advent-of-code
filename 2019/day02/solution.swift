@@ -34,44 +34,85 @@ class Solution {
       var code = line.intsSplitByComma
 
       if file.filename == "input.txt" {
-        code = code.prepareForPhaseOne()
+        code = code.prepare(noun: 12, verb: 2)
       }
 
-      return run(code: code)
+      return run(code: code).description
     }
 
     return results.description
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let line = file.lines.first!
+    let code = line.intsSplitByComma
+
+    for noun in 0...99 {
+      for verb in 0...99 {
+        let result = run(code: code.prepare(noun: noun, verb: verb))
+
+        if result == -1 {
+          print("invalid code")
+        }
+
+        if result == 19690720 {
+          return (noun * 100 + verb).description
+        }
+      }
+    }
+    fatalError("Did not find a solution")
   }
 
-  private func run(code: [Int]) -> String {
-    let result = runNext(code: code, index: 0)
-    return result[0].description
+  private func run(code: [Int]) -> Int {
+    let result = runNext(state: State(code: code, index: 0))
+    return result[0]
   }
 
-  private func runNext(code: [Int], index: Int) -> [Int] {
-    switch code[index] {
+  private func runNext(state: State) -> [Int] {
+    guard state.index < state.code.count else { return [-1] }
+    switch state.code[state.index] {
     case 99:
-      return code
+      return state.code
     case 1:
-      let lhs = code[code[index + 1]]
-      let rhs = code[code[index + 2]]
-      var result = code
-      result[code[index + 3]] = lhs + rhs
-      return runNext(code: result, index: index + 4)
+      let result = performOperator(state: state, oper: +)
+      return runNext(state: result)
     case 2:
-      let lhs = code[code[index + 1]]
-      let rhs = code[code[index + 2]]
-      var result = code
-      result[code[index + 3]] = lhs * rhs
-      return runNext(code: result, index: index + 4)
+      let result = performOperator(state: state, oper: *)
+      return runNext(state: result)
     default:
-      fatalError("Unexpected opcode: \(code[index])")
+      return [-1]
     }
   }
+
+  private func performOperator(state: State, oper: (Int, Int) -> Int) -> State {
+    let index = state.index
+    let code = state.code
+
+    guard index + 3 < code.count else { return .errorState }
+
+    let lhsIndex = code[index + 1]
+    let rhsIndex = code[index + 2]
+    let resultIndex = code[index + 3]
+
+    guard lhsIndex < code.count,
+          rhsIndex < code.count,
+          resultIndex < code.count else {
+      return .errorState
+    }
+
+    let lhs = code[lhsIndex]
+    let rhs = code[rhsIndex]
+    var result = code
+    result[resultIndex] = oper(lhs, rhs)
+    return State(code: result, index: index + 4)
+  }
+}
+
+struct State {
+  let code: [Int]
+  let index: Int
+
+  static var errorState: State { return State(code: [-1], index: 0) }
 }
 
 class File {
@@ -109,10 +150,10 @@ extension String {
 }
 
 extension Array where Element == Int {
-  func prepareForPhaseOne() -> [Int] {
+  func prepare(noun: Int, verb: Int) -> [Int] {
     var new = self
-    new[1] = 12
-    new[2] = 2
+    new[1] = noun
+    new[2] = verb
     return new
   }
 }
