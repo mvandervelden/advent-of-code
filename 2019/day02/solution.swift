@@ -29,11 +29,48 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let lines = file.lines
+    let results = lines.map { (line) -> String in
+      var code = line.intsSplitByComma
+
+      if file.filename == "input.txt" {
+        code = code.prepareForPhaseOne()
+      }
+
+      return run(code: code)
+    }
+
+    return results.description
   }
 
   private func solveTwo(file: File) -> String {
     return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+  }
+
+  private func run(code: [Int]) -> String {
+    let result = runNext(code: code, index: 0)
+    return result[0].description
+  }
+
+  private func runNext(code: [Int], index: Int) -> [Int] {
+    switch code[index] {
+    case 99:
+      return code
+    case 1:
+      let lhs = code[code[index + 1]]
+      let rhs = code[code[index + 2]]
+      var result = code
+      result[code[index + 3]] = lhs + rhs
+      return runNext(code: result, index: index + 4)
+    case 2:
+      let lhs = code[code[index + 1]]
+      let rhs = code[code[index + 2]]
+      var result = code
+      result[code[index + 3]] = lhs * rhs
+      return runNext(code: result, index: index + 4)
+    default:
+      fatalError("Unexpected opcode: \(code[index])")
+    }
   }
 }
 
@@ -62,6 +99,21 @@ class File {
 
   init(filename: String) {
     self.filename = filename
+  }
+}
+
+extension String {
+  var intsSplitByComma: [Int] {
+    return split(separator: ",").compactMap { Int(String($0)) }
+  }
+}
+
+extension Array where Element == Int {
+  func prepareForPhaseOne() -> [Int] {
+    var new = self
+    new[1] = 12
+    new[2] = 2
+    return new
   }
 }
 
