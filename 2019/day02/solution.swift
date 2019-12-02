@@ -37,7 +37,13 @@ class Solution {
         code = code.prepare(noun: 12, verb: 2)
       }
 
-      return run(code: code).description
+      let intCode = IntCode(code: code)
+
+      do {
+        return try intCode.run().description
+      } catch {
+        fatalError("Error running IntCode: \(error)")
+      }
     }
 
     return results.description
@@ -49,46 +55,61 @@ class Solution {
 
     for noun in 0...99 {
       for verb in 0...99 {
-        let result = run(code: code.prepare(noun: noun, verb: verb))
+        let intCode = IntCode(code: code.prepare(noun: noun, verb: verb))
 
-        if result == -1 {
-          print("invalid code")
-        }
+        do {
+          let result = try intCode.run()
 
-        if result == 19690720 {
-          return (noun * 100 + verb).description
+          if result == 19690720 {
+            return (noun * 100 + verb).description
+          }
+        } catch {
+          print("invalid code: \(error)")
         }
       }
     }
     fatalError("Did not find a solution")
   }
+}
 
-  private func run(code: [Int]) -> Int {
-    let result = runNext(state: State(code: code, index: 0))
-    return result[0]
+enum IntCodeError: Error {
+  case indexOutOfBounds
+  case unexpectedOpcode
+  case operatorExceedsBounds
+  case operatorRegisterExceedsBounds
+}
+
+class IntCode {
+  var code: [Int]
+  var index = 0
+
+  init(code: [Int]) {
+    self.code = code
   }
 
-  private func runNext(state: State) -> [Int] {
-    guard state.index < state.code.count else { return [-1] }
-    switch state.code[state.index] {
-    case 99:
-      return state.code
-    case 1:
-      let result = performOperator(state: state, oper: +)
-      return runNext(state: result)
-    case 2:
-      let result = performOperator(state: state, oper: *)
-      return runNext(state: result)
+  func run(resultIndex: Int = 0) throws -> Int {
+    try runNext()
+    return code[resultIndex]
+  }
+
+  private func runNext() throws {
+    guard index < code.count else { throw IntCodeError.indexOutOfBounds }
+    switch code[index] {
+    case .endProgram:
+      return
+    case .add:
+      try performOperator(+)
+      try runNext()
+    case .multiply:
+      try performOperator(*)
+      try runNext()
     default:
-      return [-1]
+      throw IntCodeError.unexpectedOpcode
     }
   }
 
-  private func performOperator(state: State, oper: (Int, Int) -> Int) -> State {
-    let index = state.index
-    let code = state.code
-
-    guard index + 3 < code.count else { return .errorState }
+  private func performOperator(_ oper: (Int, Int) -> Int) throws {
+    guard index + 3 < code.count else { throw IntCodeError.operatorExceedsBounds }
 
     let lhsIndex = code[index + 1]
     let rhsIndex = code[index + 2]
@@ -97,22 +118,20 @@ class Solution {
     guard lhsIndex < code.count,
           rhsIndex < code.count,
           resultIndex < code.count else {
-      return .errorState
+      throw IntCodeError.operatorRegisterExceedsBounds
     }
 
     let lhs = code[lhsIndex]
     let rhs = code[rhsIndex]
-    var result = code
-    result[resultIndex] = oper(lhs, rhs)
-    return State(code: result, index: index + 4)
+    code[resultIndex] = oper(lhs, rhs)
+    index += 4
   }
 }
 
-struct State {
-  let code: [Int]
-  let index: Int
-
-  static var errorState: State { return State(code: [-1], index: 0) }
+extension Int {
+  static let endProgram = 99
+  static let add = 1
+  static let multiply = 2
 }
 
 class File {
