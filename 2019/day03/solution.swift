@@ -34,13 +34,15 @@ class Solution {
     var grid = Grid()
 
     for vector in path1 {
-      grid.addVector(vector)
+      grid.addVector(vector, wire: 1)
     }
 
+    grid.resetToOrigin()
+
     for vector in path2 {
-      grid.addVector(vector)
+      grid.addVector(vector, wire: 2)
     }
-    return "\(grid.description)"
+    return grid.nearestIntersectionDistance().description
   }
 
   private func solveTwo(file: File) -> String {
@@ -55,105 +57,174 @@ struct Grid {
   init() {
     currentGrid = [:]
     currentGrid[0] = [:]
-    currentGrid[0]![0] = GridPoint.origin
+    currentGrid[0]![0] = GridPoint(value: .origin, wire: 0)
   }
 
-  mutating func addVector(_ vector: Vector) {
+  //swiftlint:disable:next cyclomatic_complexity function_body_length
+  mutating func addVector(_ vector: Vector, wire: Int) {
+    // print(description)
     //swiftlint:disable identifier_name
+    let x = currentCoordinates.x
+    let y = currentCoordinates.y
+
     switch vector.direction {
     case .up:
       for dy in 1..<vector.distance {
-        let oldPoint = currentGrid[currentCoordinates.x]![currentCoordinates.x - dy]
+        if currentGrid[y - dy] == nil { currentGrid[y - dy] = [:] }
+
+        let oldPoint = currentGrid[y - dy]![x]
         switch oldPoint {
         case .none:
-          currentGrid[currentCoordinates.x]![currentCoordinates.x - dy] = .vPath
-        case .some(.hPath):
-          currentGrid[currentCoordinates.x]![currentCoordinates.x - dy] = .cross
+          currentGrid[y - dy]![x] = GridPoint(value: .vPath, wire: wire)
+        case .some(let point) where point.value == .hPath:
+          if point.wire != wire {
+            currentGrid[y - dy]![x] = GridPoint(value: .cross, wire: wire)
+          } else {
+            currentGrid[y - dy]![x] = GridPoint(value: .ownCross, wire: wire)
+          }
         default:
           fatalError("""
             unexpected value in grid.
-            coord: (\(currentCoordinates.x), \(currentCoordinates.x - dy)):
-            \(currentGrid[currentCoordinates.x]![currentCoordinates.x - dy]!),
+            coord: (\(x), \(y - dy)):
+            \(currentGrid[y - dy]![x]!),
             for vector: \(vector)
           """)
         }
       }
-      currentGrid[currentCoordinates.x]![currentCoordinates.y - vector.distance] = .corner
-      currentCoordinates = (x: currentCoordinates.x, y: currentCoordinates.y - vector.distance)
+      if currentGrid[y - vector.distance] == nil { currentGrid[y - vector.distance] = [:] }
+
+      currentGrid[y - vector.distance]![x] = GridPoint(value: .corner, wire: wire)
+      currentCoordinates = (x: x, y: y - vector.distance)
     case .down:
-      for y in (currentCoordinates.y + 1)..<(currentCoordinates.y + vector.distance) {
-        let oldPoint = currentGrid[currentCoordinates.x]![y]
+      for dy in 1..<vector.distance {
+        if currentGrid[y + dy] == nil { currentGrid[y + dy] = [:] }
+
+        let oldPoint = currentGrid[y + dy]![x]
         switch oldPoint {
         case .none:
-          currentGrid[currentCoordinates.x]![y] = .vPath
-        case .some(.hPath):
-          currentGrid[currentCoordinates.x]![y] = .cross
+          currentGrid[y + dy]![x] = GridPoint(value: .vPath, wire: wire)
+        case .some(let point) where point.value == .hPath:
+          if point.wire != wire {
+            currentGrid[y + dy]![x] = GridPoint(value: .cross, wire: wire)
+          } else {
+            currentGrid[y + dy]![x] = GridPoint(value: .ownCross, wire: wire)
+          }
         default:
-          fatalError("unexpected value in grid. coord: (\(currentCoordinates.x), \(y)): \(currentGrid[currentCoordinates.x]![y]!), for vector: \(vector)")
+          fatalError("""
+            unexpected value in grid.
+            coord: (\(x), \(y)):
+            \(currentGrid[y + dy]![x]!),
+            for vector: \(vector)
+          """)
         }
       }
-      currentGrid[currentCoordinates.x]![currentCoordinates.y + vector.distance] = .corner
-      currentCoordinates = (x: currentCoordinates.x, y: currentCoordinates.y + vector.distance)
+      if currentGrid[y + vector.distance] == nil { currentGrid[y + vector.distance] = [:] }
+
+      currentGrid[y + vector.distance]![x] = GridPoint(value: .corner, wire: wire)
+      currentCoordinates = (x: x, y: y + vector.distance)
     case .left:
       for dx in 1..<vector.distance {
-        if currentGrid[currentCoordinates.x - dx] == nil { currentGrid[currentCoordinates.x - dx] = [:] }
-
-        let oldPoint = currentGrid[currentCoordinates.x - dx]![currentCoordinates.y]
+        let oldPoint = currentGrid[y]![x - dx]
         switch oldPoint {
         case .none:
-          currentGrid[currentCoordinates.x - dx]![currentCoordinates.y] = .hPath
-        case .some(.vPath):
-          currentGrid[currentCoordinates.x - dx]![currentCoordinates.y] = .cross
+          currentGrid[y]![x - dx] = GridPoint(value: .hPath, wire: wire)
+        case .some(let point) where point.value == .vPath:
+          if point.wire != wire {
+            currentGrid[y]![x - dx] = GridPoint(value: .cross, wire: wire)
+          } else {
+            currentGrid[y]![x - dx] = GridPoint(value: .ownCross, wire: wire)
+          }
         default:
           fatalError("""
             unexpected value in grid.
-            coord: (\(currentCoordinates.x - dx), \(currentCoordinates.y)):
-            \(currentGrid[currentCoordinates.x - dx]![currentCoordinates.y]!),
+            coord: (\(x - dx), \(y)):
+            \(currentGrid[y]![x - dx]!),
             for vector: \(vector)
           """)
         }
       }
-      if currentGrid[currentCoordinates.x + vector.distance] == nil {
-        currentGrid[currentCoordinates.x + vector.distance] = [:]
-      }
 
-      currentGrid[currentCoordinates.x - vector.distance]![currentCoordinates.y] = .corner
-      currentCoordinates = (x: currentCoordinates.x - vector.distance, y: currentCoordinates.y)
+      currentGrid[y]![x - vector.distance] = GridPoint(value: .corner, wire: wire)
+      currentCoordinates = (x: x - vector.distance, y: y)
     case .right:
-      for x in (currentCoordinates.x + 1)..<(currentCoordinates.x + vector.distance) {
-        if currentGrid[x] == nil { currentGrid[x] = [:] }
-
-        let oldPoint = currentGrid[x]![currentCoordinates.y]
+      for dx in 1..<vector.distance {
+        let oldPoint = currentGrid[y]![x + dx]
         switch oldPoint {
         case .none:
-          currentGrid[x]![currentCoordinates.y] = .hPath
-        case .some(.vPath):
-          currentGrid[x]![currentCoordinates.y] = .cross
+          currentGrid[y]![x + dx] = GridPoint(value: .hPath, wire: wire)
+        case .some(let point) where point.value == .vPath:
+          if point.wire != wire {
+            currentGrid[y]![x + dx] = GridPoint(value: .cross, wire: wire)
+          } else {
+            currentGrid[y]![x + dx] = GridPoint(value: .ownCross, wire: wire)
+          }
         default:
-          fatalError("unexpected value in grid. coord: (\(x), \(currentCoordinates.y)): \(currentGrid[x]![currentCoordinates.y]!), for vector: \(vector)")
+          fatalError("""
+            unexpected value in grid.
+            coord: (\(x + dx), \(y)):
+            \(currentGrid[y]![x + dx]!),
+            for vector: \(vector)
+          """)
         }
       }
-      if currentGrid[currentCoordinates.x + vector.distance] == nil {
-        currentGrid[currentCoordinates.x + vector.distance] = [:]
-      }
 
-      currentGrid[currentCoordinates.x + vector.distance]![currentCoordinates.y] = .corner
-      currentCoordinates = (x: currentCoordinates.x + vector.distance, y: currentCoordinates.y)
+      currentGrid[y]![x + vector.distance] = GridPoint(value: .corner, wire: wire)
+      currentCoordinates = (x: x + vector.distance, y: y)
     }
     //swiftlint:enable identifier_name
   }
 
+  mutating func resetToOrigin() {
+    currentCoordinates = (x: 0, y: 0)
+  }
+
+  func nearestIntersectionDistance() -> Int {
+    var closestIntersection = Int.max
+    for xKey in currentGrid.keys {
+      for yKey in currentGrid[xKey]!.keys where currentGrid[xKey]![yKey]!.value == .cross {
+        closestIntersection = min(closestIntersection, abs(xKey) + abs(yKey))
+      }
+    }
+    return closestIntersection
+  }
+
   var description: String {
-    return ""
+    let minX = currentGrid.keys.min()!
+    let maxX = currentGrid.keys.max()!
+
+    var minY = Int.max
+    var maxY = Int.min
+
+    for key in currentGrid.keys {
+      minY = min(minY, currentGrid[key]!.keys.min()!)
+      maxY = max(maxY, currentGrid[key]!.keys.max()!)
+    }
+
+    var string = ""
+    //swiftlint:disable identifier_name
+    for x in minX...maxX {
+      for y in minY...maxY {
+        string.append(currentGrid[x]?[y]?.value.rawValue ?? ".")
+      }
+      string.append("\n")
+    }
+    //swiftlint:enable identifier_name
+    return string
   }
 }
 
-enum GridPoint: Character {
+struct GridPoint {
+  let value: GridValue
+  let wire: Int
+}
+
+enum GridValue: Character {
   case origin = "o"
   case hPath = "-"
   case vPath = "|"
   case corner = "+"
   case cross = "X"
+  case ownCross = "÷"
 }
 
 enum Direction: Character {
@@ -169,7 +240,6 @@ struct Vector {
   let distance: Int
 
   init(string: String) {
-    print(string)
     direction = Direction(rawValue: string.first!)!
     let distanceString = string.dropFirst()
     distance = Int(distanceString)!
