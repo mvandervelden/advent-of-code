@@ -46,18 +46,32 @@ class Solution {
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let path1 = file.words.first!.vectors
+    let path2 = file.words.last!.vectors
+    var grid = Grid()
+
+    for vector in path1 {
+      grid.addVector(vector, wire: 1)
+    }
+
+    grid.resetToOrigin()
+
+    for vector in path2 {
+      grid.addVector(vector, wire: 2)
+    }
+    return grid.soonestIntersection().description
   }
 }
 
 struct Grid {
   var currentGrid: [Int: [Int: GridPoint]]
   var currentCoordinates: (x: Int, y: Int) = (x: 0, y: 0)
+  var time: Int = 0
 
   init() {
     currentGrid = [:]
     currentGrid[0] = [:]
-    currentGrid[0]![0] = GridPoint(value: .origin, wire: 0)
+    currentGrid[0]![0] = GridPoint(value: .origin, wire: 0, time: 0)
   }
 
   //swiftlint:disable:next cyclomatic_complexity function_body_length
@@ -75,12 +89,12 @@ struct Grid {
         let oldPoint = currentGrid[y - dy]![x]
         switch oldPoint {
         case .none:
-          currentGrid[y - dy]![x] = GridPoint(value: .vPath, wire: wire)
+          currentGrid[y - dy]![x] = GridPoint(value: .vPath, wire: wire, time: time + dy)
         case .some(let point) where point.value == .hPath:
           if point.wire != wire {
-            currentGrid[y - dy]![x] = GridPoint(value: .cross, wire: wire)
+            currentGrid[y - dy]![x] = GridPoint(value: .cross, wire: wire, time: point.time + time + dy)
           } else {
-            currentGrid[y - dy]![x] = GridPoint(value: .ownCross, wire: wire)
+            currentGrid[y - dy]![x] = GridPoint(value: .ownCross, wire: wire, time: point.time)
           }
         default:
           fatalError("""
@@ -93,7 +107,7 @@ struct Grid {
       }
       if currentGrid[y - vector.distance] == nil { currentGrid[y - vector.distance] = [:] }
 
-      currentGrid[y - vector.distance]![x] = GridPoint(value: .corner, wire: wire)
+      currentGrid[y - vector.distance]![x] = GridPoint(value: .corner, wire: wire, time: time + vector.distance)
       currentCoordinates = (x: x, y: y - vector.distance)
     case .down:
       for dy in 1..<vector.distance {
@@ -102,12 +116,12 @@ struct Grid {
         let oldPoint = currentGrid[y + dy]![x]
         switch oldPoint {
         case .none:
-          currentGrid[y + dy]![x] = GridPoint(value: .vPath, wire: wire)
+          currentGrid[y + dy]![x] = GridPoint(value: .vPath, wire: wire, time: time + dy)
         case .some(let point) where point.value == .hPath:
           if point.wire != wire {
-            currentGrid[y + dy]![x] = GridPoint(value: .cross, wire: wire)
+            currentGrid[y + dy]![x] = GridPoint(value: .cross, wire: wire, time: point.time + time + dy)
           } else {
-            currentGrid[y + dy]![x] = GridPoint(value: .ownCross, wire: wire)
+            currentGrid[y + dy]![x] = GridPoint(value: .ownCross, wire: wire, time: point.time)
           }
         default:
           fatalError("""
@@ -120,19 +134,19 @@ struct Grid {
       }
       if currentGrid[y + vector.distance] == nil { currentGrid[y + vector.distance] = [:] }
 
-      currentGrid[y + vector.distance]![x] = GridPoint(value: .corner, wire: wire)
+      currentGrid[y + vector.distance]![x] = GridPoint(value: .corner, wire: wire, time: time + vector.distance)
       currentCoordinates = (x: x, y: y + vector.distance)
     case .left:
       for dx in 1..<vector.distance {
         let oldPoint = currentGrid[y]![x - dx]
         switch oldPoint {
         case .none:
-          currentGrid[y]![x - dx] = GridPoint(value: .hPath, wire: wire)
+          currentGrid[y]![x - dx] = GridPoint(value: .hPath, wire: wire, time: time + dx)
         case .some(let point) where point.value == .vPath:
           if point.wire != wire {
-            currentGrid[y]![x - dx] = GridPoint(value: .cross, wire: wire)
+            currentGrid[y]![x - dx] = GridPoint(value: .cross, wire: wire, time: point.time + time + dx)
           } else {
-            currentGrid[y]![x - dx] = GridPoint(value: .ownCross, wire: wire)
+            currentGrid[y]![x - dx] = GridPoint(value: .ownCross, wire: wire, time: point.time)
           }
         default:
           fatalError("""
@@ -144,19 +158,19 @@ struct Grid {
         }
       }
 
-      currentGrid[y]![x - vector.distance] = GridPoint(value: .corner, wire: wire)
+      currentGrid[y]![x - vector.distance] = GridPoint(value: .corner, wire: wire, time: time + vector.distance)
       currentCoordinates = (x: x - vector.distance, y: y)
     case .right:
       for dx in 1..<vector.distance {
         let oldPoint = currentGrid[y]![x + dx]
         switch oldPoint {
         case .none:
-          currentGrid[y]![x + dx] = GridPoint(value: .hPath, wire: wire)
+          currentGrid[y]![x + dx] = GridPoint(value: .hPath, wire: wire, time: time + dx)
         case .some(let point) where point.value == .vPath:
           if point.wire != wire {
-            currentGrid[y]![x + dx] = GridPoint(value: .cross, wire: wire)
+            currentGrid[y]![x + dx] = GridPoint(value: .cross, wire: wire, time: point.time + time + dx)
           } else {
-            currentGrid[y]![x + dx] = GridPoint(value: .ownCross, wire: wire)
+            currentGrid[y]![x + dx] = GridPoint(value: .ownCross, wire: wire, time: point.time)
           }
         default:
           fatalError("""
@@ -168,14 +182,16 @@ struct Grid {
         }
       }
 
-      currentGrid[y]![x + vector.distance] = GridPoint(value: .corner, wire: wire)
+      currentGrid[y]![x + vector.distance] = GridPoint(value: .corner, wire: wire, time: time + vector.distance)
       currentCoordinates = (x: x + vector.distance, y: y)
     }
+    time += vector.distance
     //swiftlint:enable identifier_name
   }
 
   mutating func resetToOrigin() {
     currentCoordinates = (x: 0, y: 0)
+    time = 0
   }
 
   func nearestIntersectionDistance() -> Int {
@@ -186,6 +202,16 @@ struct Grid {
       }
     }
     return closestIntersection
+  }
+
+  func soonestIntersection() -> Int {
+    var soonest = Int.max
+    for xKey in currentGrid.keys {
+      for yKey in currentGrid[xKey]!.keys where currentGrid[xKey]![yKey]!.value == .cross {
+        soonest = min(soonest, currentGrid[xKey]![yKey]!.time)
+      }
+    }
+    return soonest
   }
 
   var description: String {
@@ -216,6 +242,7 @@ struct Grid {
 struct GridPoint {
   let value: GridValue
   let wire: Int
+  let time: Int
 }
 
 enum GridValue: Character {
