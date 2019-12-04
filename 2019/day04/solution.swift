@@ -29,11 +29,70 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let amount = getPasswords(lowerBound: 382345, upperBound: 843167)
+    return amount.description
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let amount = getLimitedPasswords(lowerBound: 382345, upperBound: 843167)
+    return amount.description
+  }
+
+  private func getPasswords(lowerBound: Int, upperBound: Int) -> Int {
+    var count = 0
+    for int in lowerBound...upperBound {
+      let str = int.description
+      if str.isMonotoneuoslyIncreasing && str.hasDoubles {
+        count += 1
+      }
+    }
+    return count
+  }
+
+  private func getLimitedPasswords(lowerBound: Int, upperBound: Int) -> Int {
+    var count = 0
+    for int in lowerBound...upperBound {
+      let str = int.description
+      if str.isMonotoneuoslyIncreasing && str.hasLimitedDoubles {
+        count += 1
+      }
+    }
+    return count
+  }
+}
+
+extension String {
+  var isMonotoneuoslyIncreasing: Bool {
+    var lastChar: Character = "3"
+    for char in self {
+      if char < lastChar {
+        return false
+      }
+      lastChar = char
+    }
+    return true
+  }
+
+  var hasDoubles: Bool {
+    var lastChar: Character = self[startIndex]
+    for char in self[index(startIndex, offsetBy: 1)...] {
+      if char == lastChar {
+         return true
+      }
+      lastChar = char
+    }
+
+    return false
+  }
+
+  var hasLimitedDoubles: Bool {
+    var hist: [Character: Int] = [:]
+
+    for char in self {
+      hist[char, default: 0] += 1
+    }
+
+    return hist.values.contains(2)
   }
 }
 
