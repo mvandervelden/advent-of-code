@@ -74,15 +74,13 @@ extension String {
   }
 
   var hasDoubles: Bool {
-    var lastChar: Character = self[startIndex]
-    for char in self[index(startIndex, offsetBy: 1)...] {
-      if char == lastChar {
-         return true
-      }
-      lastChar = char
+    var hist: [Character: Int] = [:]
+
+    for char in self {
+      hist[char, default: 0] += 1
     }
 
-    return false
+    return hist.values.max()! > 1
   }
 
   var hasLimitedDoubles: Bool {
