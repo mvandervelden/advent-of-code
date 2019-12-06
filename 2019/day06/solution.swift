@@ -29,11 +29,80 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let input = file.words
+
+    var orbited: [String: [String]] = [:]
+
+    for line in input {
+      orbited[line[0], default: []].append(line[1])
+    }
+
+    var orbits = 0
+
+    for key in orbited.keys {
+      orbits += calculateOrbits(orbited: orbited, key: key)
+    }
+
+    return orbits.description
+  }
+
+  private func calculateOrbits(orbited: [String: [String]], key: String) -> Int {
+    var orbits = 0
+    if let indirects = orbited[key] {
+      orbits += indirects.count
+      for ind in indirects {
+        orbits += calculateOrbits(orbited: orbited, key: ind)
+      }
+      return orbits
+    } else {
+      return 0
+    }
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let input = file.words
+
+    var orbited: [String: [String]] = [:]
+
+    for line in input {
+      orbited[line[0], default: []].append(line[1])
+    }
+
+    var youPath: [String] = []
+    var currentNode = "YOU"
+
+    while currentNode != "COM" {
+      currentNode = orbited.first { $0.value.contains(currentNode) }!.key
+      youPath.append(currentNode)
+    }
+
+    var sanPath: [String] = []
+    currentNode = "SAN"
+
+    while currentNode != "COM" {
+      currentNode = orbited.first { $0.value.contains(currentNode) }!.key
+      sanPath.append(currentNode)
+    }
+
+    var steps = 0
+    for node in youPath {
+      steps += 1
+      if let match = sanPath.firstIndex(of: node) {
+        steps += match - 1
+        break
+      }
+    }
+    // used for debugging:
+    // zip(youPath.reversed(), sanPath.reversed()).forEach { youNode, sanNode in
+    //   if youNode == sanNode {
+    //     print("same found: \(youNode)")
+    //   } else {
+    //     print("different: \(youNode), \(sanNode)")
+    //   }
+    // }
+    // print(youPath.firstIndex(of: "63K"))
+    // print(sanPath.firstIndex(of: "63K"))
+    return steps.description
   }
 }
 
@@ -57,7 +126,7 @@ class File {
   }()
 
   lazy var words: Words = {
-    return lines.map { $0.split(separator: " ").map(String.init) }
+    return lines.map { $0.split(separator: ")").map(String.init) }
   }()
 
   init(filename: String) {
