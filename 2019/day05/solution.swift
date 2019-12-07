@@ -46,7 +46,20 @@ class Solution {
   }
 
   private func solveTwo(file: File) -> String {
-    return "TODO"
+    let lines = file.lines
+    let results = lines.map { (line) -> String in
+      let code = line.intsSplitByComma
+
+      let intCode = IntCode(code: code, inputs: [5])
+
+      do {
+        return try intCode.run().description
+      } catch {
+        print("Error: \(error)")
+        fatalError("Error running IntCode: \(error)")
+      }
+    }
+    return results.description
   }
 }
 
@@ -63,19 +76,21 @@ class IntCode {
   var code: [Int]
   var index = 0
   var inputs: [Int]
+  var outputs: [Int] = []
 
   init(code: [Int], inputs: [Int]) {
     self.code = code
     self.inputs = inputs
   }
 
-  func run(resultIndex: Int = 0) throws -> Int {
+  func run(resultIndex: Int = 0) throws -> [Int] {
     try runNext()
-    print(code)
-    return code[resultIndex]
+    // print(code)
+    return outputs
   }
 
   private func runNext() throws {
+    // print("index: \(index): \(code[index])")
     guard index < code.count else { throw IntCodeError.indexOutOfBounds }
 
     let opcode = code[index]
@@ -106,6 +121,14 @@ class IntCode {
       try runNext()
     case .output:
       try performOutputOperation(opcode: opcodeString)
+    case .jumpIfTrue:
+      try performJumpOperation(opcode: opcodeString, condition: true)
+    case .jumpIfFalse:
+      try performJumpOperation(opcode: opcodeString, condition: false)
+    case .lessThan:
+      try perform3ParamOperation(opcode: opcodeString, oper: { $0 < $1 ? 1 : 0 })
+    case .equals:
+      try perform3ParamOperation(opcode: opcodeString, oper: { $0 == $1 ? 1 : 0 })
     case .endProgram:
       return
     }
@@ -150,24 +173,66 @@ class IntCode {
   }
 
   private func performOutputOperation(opcode: String) throws {
-      let value: Int
-      var outputIndex = index + 1
+    let value: Int
+    var outputIndex = index + 1
 
-      switch opcode.last ?? "0" {
-      case "0":
-        outputIndex = code[index + 1]
-        guard outputIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
-        value = code[outputIndex]
-      case "1":
-        value = code[index + 1]
-      default:
-        throw IntCodeError.unexpectedOpcode
-      }
+    switch opcode.last ?? "0" {
+    case "0":
+      outputIndex = code[index + 1]
+      guard outputIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
+      value = code[outputIndex]
+    case "1":
+      value = code[index + 1]
+    default:
+      throw IntCodeError.unexpectedOpcode
+    }
 
-      print("output: \(value) -> \(outputIndex)")
-      index += 2
+    print("output: \(value) <- \(outputIndex)")
+    outputs.append(value)
+    index += 2
 
-      try runNext()
+    try runNext()
+  }
+
+  func performJumpOperation(opcode: String, condition: Bool) throws {
+    // print("jump")
+    var opcode = opcode
+    guard index + 2 < code.count else { throw IntCodeError.operatorExceedsBounds }
+
+    let testValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let testIndex = code[index + 1]
+      guard testIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
+      testValue = code[testIndex]
+    case "1":
+      testValue = code[index + 1]
+    default:
+      throw IntCodeError.unexpectedOpcode
+    }
+
+    let jumpValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let jumpIndex = code[index + 2]
+      guard jumpIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
+      jumpValue = code[jumpIndex]
+    case "1":
+      jumpValue = code[index + 2]
+    default:
+      throw IntCodeError.unexpectedOpcode
+    }
+
+    // print("testValue: \(testValue), condition: \(condition), willJump: \((testValue != 0) == condition)")
+    if (testValue != 0) == condition {
+      guard jumpValue < code.count, jumpValue >= 0 else { throw IntCodeError.operatorRegisterExceedsBounds }
+
+      index = jumpValue
+    } else {
+      index += 3
+    }
+
+    try runNext()
   }
 }
 
@@ -176,6 +241,10 @@ enum InstructionType: Int {
   case multiply = 2
   case input = 3
   case output = 4
+  case jumpIfTrue = 5
+  case jumpIfFalse = 6
+  case lessThan = 7
+  case equals = 8
   case endProgram = 99
 }
 
