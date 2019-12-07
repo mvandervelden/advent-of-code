@@ -29,315 +29,345 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    let lines = file.lines
-    let results = lines.map { (line) -> String in
-      let code = line.intsSplitByComma
+    // let lines = file.lines
+    // let results = lines.map { (line) -> String in
+      // let code = line.intsSplitByComma
 
-      let allInputs = [
-        [1, 2, 3, 4, 0],
-        [1, 2, 3, 0, 4],
-        [1, 2, 4, 3, 0],
-        [1, 2, 4, 0, 3],
-        [1, 2, 0, 3, 4],
-        [1, 2, 0, 4, 3],
-        [1, 3, 2, 4, 0],
-        [1, 3, 2, 0, 4],
-        [1, 3, 4, 2, 0],
-        [1, 3, 4, 0, 2],
-        [1, 3, 0, 2, 4],
-        [1, 3, 0, 4, 2],
-        [1, 4, 3, 2, 0],
-        [1, 4, 3, 0, 2],
-        [1, 4, 2, 3, 0],
-        [1, 4, 2, 0, 3],
-        [1, 4, 0, 3, 2],
-        [1, 4, 0, 2, 3],
-        [1, 0, 2, 4, 3],
-        [1, 0, 2, 3, 4],
-        [1, 0, 4, 2, 3],
-        [1, 0, 4, 3, 2],
-        [1, 0, 3, 2, 4],
-        [1, 0, 3, 4, 2],
-        [2, 1, 3, 4, 0],
-        [2, 1, 3, 0, 4],
-        [2, 1, 4, 3, 0],
-        [2, 1, 4, 0, 3],
-        [2, 1, 0, 3, 4],
-        [2, 1, 0, 4, 3],
-        [2, 3, 1, 4, 0],
-        [2, 3, 1, 0, 4],
-        [2, 3, 4, 1, 0],
-        [2, 3, 4, 0, 1],
-        [2, 3, 0, 1, 4],
-        [2, 3, 0, 4, 1],
-        [2, 4, 3, 1, 0],
-        [2, 4, 3, 0, 1],
-        [2, 4, 1, 3, 0],
-        [2, 4, 1, 0, 3],
-        [2, 4, 0, 3, 1],
-        [2, 4, 0, 1, 3],
-        [2, 0, 1, 4, 3],
-        [2, 0, 1, 3, 4],
-        [2, 0, 4, 1, 3],
-        [2, 0, 4, 3, 1],
-        [2, 0, 3, 1, 4],
-        [2, 0, 3, 4, 1],
-        [3, 2, 1, 4, 0],
-        [3, 2, 1, 0, 4],
-        [3, 2, 4, 1, 0],
-        [3, 2, 4, 0, 1],
-        [3, 2, 0, 1, 4],
-        [3, 2, 0, 4, 1],
-        [3, 1, 2, 4, 0],
-        [3, 1, 2, 0, 4],
-        [3, 1, 4, 2, 0],
-        [3, 1, 4, 0, 2],
-        [3, 1, 0, 2, 4],
-        [3, 1, 0, 4, 2],
-        [3, 4, 1, 2, 0],
-        [3, 4, 1, 0, 2],
-        [3, 4, 2, 1, 0],
-        [3, 4, 2, 0, 1],
-        [3, 4, 0, 1, 2],
-        [3, 4, 0, 2, 1],
-        [3, 0, 2, 4, 1],
-        [3, 0, 2, 1, 4],
-        [3, 0, 4, 2, 1],
-        [3, 0, 4, 1, 2],
-        [3, 0, 1, 2, 4],
-        [3, 0, 1, 4, 2],
-        [4, 1, 3, 2, 0],
-        [4, 1, 3, 0, 2],
-        [4, 1, 2, 3, 0],
-        [4, 1, 2, 0, 3],
-        [4, 1, 0, 3, 2],
-        [4, 1, 0, 2, 3],
-        [4, 3, 1, 2, 0],
-        [4, 3, 1, 0, 2],
-        [4, 3, 2, 1, 0],
-        [4, 3, 2, 0, 1],
-        [4, 3, 0, 1, 2],
-        [4, 3, 0, 2, 1],
-        [4, 2, 3, 1, 0],
-        [4, 2, 3, 0, 1],
-        [4, 2, 1, 3, 0],
-        [4, 2, 1, 0, 3],
-        [4, 2, 0, 3, 1],
-        [4, 2, 0, 1, 3],
-        [4, 0, 1, 2, 3],
-        [4, 0, 1, 3, 2],
-        [4, 0, 2, 1, 3],
-        [4, 0, 2, 3, 1],
-        [4, 0, 3, 1, 2],
-        [4, 0, 3, 2, 1],
-        [0, 1, 3, 2, 4],
-        [0, 1, 3, 4, 2],
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 4, 3],
-        [0, 1, 4, 3, 2],
-        [0, 1, 4, 2, 3],
-        [0, 3, 1, 2, 4],
-        [0, 3, 1, 4, 2],
-        [0, 3, 2, 1, 4],
-        [0, 3, 2, 4, 1],
-        [0, 3, 4, 1, 2],
-        [0, 3, 4, 2, 1],
-        [0, 2, 3, 1, 4],
-        [0, 2, 3, 4, 1],
-        [0, 2, 1, 3, 4],
-        [0, 2, 1, 4, 3],
-        [0, 2, 4, 3, 1],
-        [0, 2, 4, 1, 3],
-        [0, 4, 1, 2, 3],
-        [0, 4, 1, 3, 2],
-        [0, 4, 2, 1, 3],
-        [0, 4, 2, 3, 1],
-        [0, 4, 3, 1, 2],
-        [0, 4, 3, 2, 1]
-      ]
+      // let allInputs = [
+      //   [1, 2, 3, 4, 0],
+      //   [1, 2, 3, 0, 4],
+      //   [1, 2, 4, 3, 0],
+      //   [1, 2, 4, 0, 3],
+      //   [1, 2, 0, 3, 4],
+      //   [1, 2, 0, 4, 3],
+      //   [1, 3, 2, 4, 0],
+      //   [1, 3, 2, 0, 4],
+      //   [1, 3, 4, 2, 0],
+      //   [1, 3, 4, 0, 2],
+      //   [1, 3, 0, 2, 4],
+      //   [1, 3, 0, 4, 2],
+      //   [1, 4, 3, 2, 0],
+      //   [1, 4, 3, 0, 2],
+      //   [1, 4, 2, 3, 0],
+      //   [1, 4, 2, 0, 3],
+      //   [1, 4, 0, 3, 2],
+      //   [1, 4, 0, 2, 3],
+      //   [1, 0, 2, 4, 3],
+      //   [1, 0, 2, 3, 4],
+      //   [1, 0, 4, 2, 3],
+      //   [1, 0, 4, 3, 2],
+      //   [1, 0, 3, 2, 4],
+      //   [1, 0, 3, 4, 2],
+      //   [2, 1, 3, 4, 0],
+      //   [2, 1, 3, 0, 4],
+      //   [2, 1, 4, 3, 0],
+      //   [2, 1, 4, 0, 3],
+      //   [2, 1, 0, 3, 4],
+      //   [2, 1, 0, 4, 3],
+      //   [2, 3, 1, 4, 0],
+      //   [2, 3, 1, 0, 4],
+      //   [2, 3, 4, 1, 0],
+      //   [2, 3, 4, 0, 1],
+      //   [2, 3, 0, 1, 4],
+      //   [2, 3, 0, 4, 1],
+      //   [2, 4, 3, 1, 0],
+      //   [2, 4, 3, 0, 1],
+      //   [2, 4, 1, 3, 0],
+      //   [2, 4, 1, 0, 3],
+      //   [2, 4, 0, 3, 1],
+      //   [2, 4, 0, 1, 3],
+      //   [2, 0, 1, 4, 3],
+      //   [2, 0, 1, 3, 4],
+      //   [2, 0, 4, 1, 3],
+      //   [2, 0, 4, 3, 1],
+      //   [2, 0, 3, 1, 4],
+      //   [2, 0, 3, 4, 1],
+      //   [3, 2, 1, 4, 0],
+      //   [3, 2, 1, 0, 4],
+      //   [3, 2, 4, 1, 0],
+      //   [3, 2, 4, 0, 1],
+      //   [3, 2, 0, 1, 4],
+      //   [3, 2, 0, 4, 1],
+      //   [3, 1, 2, 4, 0],
+      //   [3, 1, 2, 0, 4],
+      //   [3, 1, 4, 2, 0],
+      //   [3, 1, 4, 0, 2],
+      //   [3, 1, 0, 2, 4],
+      //   [3, 1, 0, 4, 2],
+      //   [3, 4, 1, 2, 0],
+      //   [3, 4, 1, 0, 2],
+      //   [3, 4, 2, 1, 0],
+      //   [3, 4, 2, 0, 1],
+      //   [3, 4, 0, 1, 2],
+      //   [3, 4, 0, 2, 1],
+      //   [3, 0, 2, 4, 1],
+      //   [3, 0, 2, 1, 4],
+      //   [3, 0, 4, 2, 1],
+      //   [3, 0, 4, 1, 2],
+      //   [3, 0, 1, 2, 4],
+      //   [3, 0, 1, 4, 2],
+      //   [4, 1, 3, 2, 0],
+      //   [4, 1, 3, 0, 2],
+      //   [4, 1, 2, 3, 0],
+      //   [4, 1, 2, 0, 3],
+      //   [4, 1, 0, 3, 2],
+      //   [4, 1, 0, 2, 3],
+      //   [4, 3, 1, 2, 0],
+      //   [4, 3, 1, 0, 2],
+      //   [4, 3, 2, 1, 0],
+      //   [4, 3, 2, 0, 1],
+      //   [4, 3, 0, 1, 2],
+      //   [4, 3, 0, 2, 1],
+      //   [4, 2, 3, 1, 0],
+      //   [4, 2, 3, 0, 1],
+      //   [4, 2, 1, 3, 0],
+      //   [4, 2, 1, 0, 3],
+      //   [4, 2, 0, 3, 1],
+      //   [4, 2, 0, 1, 3],
+      //   [4, 0, 1, 2, 3],
+      //   [4, 0, 1, 3, 2],
+      //   [4, 0, 2, 1, 3],
+      //   [4, 0, 2, 3, 1],
+      //   [4, 0, 3, 1, 2],
+      //   [4, 0, 3, 2, 1],
+      //   [0, 1, 3, 2, 4],
+      //   [0, 1, 3, 4, 2],
+      //   [0, 1, 2, 3, 4],
+      //   [0, 1, 2, 4, 3],
+      //   [0, 1, 4, 3, 2],
+      //   [0, 1, 4, 2, 3],
+      //   [0, 3, 1, 2, 4],
+      //   [0, 3, 1, 4, 2],
+      //   [0, 3, 2, 1, 4],
+      //   [0, 3, 2, 4, 1],
+      //   [0, 3, 4, 1, 2],
+      //   [0, 3, 4, 2, 1],
+      //   [0, 2, 3, 1, 4],
+      //   [0, 2, 3, 4, 1],
+      //   [0, 2, 1, 3, 4],
+      //   [0, 2, 1, 4, 3],
+      //   [0, 2, 4, 3, 1],
+      //   [0, 2, 4, 1, 3],
+      //   [0, 4, 1, 2, 3],
+      //   [0, 4, 1, 3, 2],
+      //   [0, 4, 2, 1, 3],
+      //   [0, 4, 2, 3, 1],
+      //   [0, 4, 3, 1, 2],
+      //   [0, 4, 3, 2, 1]
+      // ]
 
-      var maxCombi = ""
-      var maxVal = 0
+      // var maxCombi = ""
+      // var maxVal = 0
 
-      for input in allInputs {
-        var nextInput = 0
-        for index in input {
-          let intCode = IntCode(code: code, inputs: [index, nextInput])
+      // for input in allInputs {
+      //   var nextInput = 0
+      //   for index in input {
+          // let intCode = IntCode(code: code, inputs: [index, nextInput])
 
-          do {
-            let result = try intCode.run()
-            print(result)
-            nextInput = result[0]
-          } catch {
-            print("Error: \(error)")
-            fatalError("Error running IntCode: \(error)")
-          }
-        }
+          // do {
+          //   let result = try intCode.run()
+          //   print(result)
+          //   nextInput = result[0]
+          // } catch {
+          //   print("Error: \(error)")
+          //   fatalError("Error running IntCode: \(error)")
+          // }
+        // }
 
-        if nextInput > maxVal {
-          maxCombi = input.description + nextInput.description
-          maxVal = nextInput
-        }
-      }
-      return maxCombi
-    }
-    return results.description
+    //     if nextInput > maxVal {
+    //       maxCombi = input.description + nextInput.description
+    //       maxVal = nextInput
+    //     }
+    //   }
+    //   return maxCombi
+    // }
+    // return results.description
+    return "TODO"
   }
 
   private func solveTwo(file: File) -> String {
     let lines = file.lines
-    let results = lines.map { (line) -> String in
-      let code = line.intsSplitByComma
+    let line = lines[0]
+    // let results = lines.map { (line) -> String in
+    code = line.intsSplitByComma
+    runInput(index: 0)
 
-      let allInputs = [
-        [1, 2, 3, 4, 0],
-        [1, 2, 3, 0, 4],
-        [1, 2, 4, 3, 0],
-        [1, 2, 4, 0, 3],
-        [1, 2, 0, 3, 4],
-        [1, 2, 0, 4, 3],
-        [1, 3, 2, 4, 0],
-        [1, 3, 2, 0, 4],
-        [1, 3, 4, 2, 0],
-        [1, 3, 4, 0, 2],
-        [1, 3, 0, 2, 4],
-        [1, 3, 0, 4, 2],
-        [1, 4, 3, 2, 0],
-        [1, 4, 3, 0, 2],
-        [1, 4, 2, 3, 0],
-        [1, 4, 2, 0, 3],
-        [1, 4, 0, 3, 2],
-        [1, 4, 0, 2, 3],
-        [1, 0, 2, 4, 3],
-        [1, 0, 2, 3, 4],
-        [1, 0, 4, 2, 3],
-        [1, 0, 4, 3, 2],
-        [1, 0, 3, 2, 4],
-        [1, 0, 3, 4, 2],
-        [2, 1, 3, 4, 0],
-        [2, 1, 3, 0, 4],
-        [2, 1, 4, 3, 0],
-        [2, 1, 4, 0, 3],
-        [2, 1, 0, 3, 4],
-        [2, 1, 0, 4, 3],
-        [2, 3, 1, 4, 0],
-        [2, 3, 1, 0, 4],
-        [2, 3, 4, 1, 0],
-        [2, 3, 4, 0, 1],
-        [2, 3, 0, 1, 4],
-        [2, 3, 0, 4, 1],
-        [2, 4, 3, 1, 0],
-        [2, 4, 3, 0, 1],
-        [2, 4, 1, 3, 0],
-        [2, 4, 1, 0, 3],
-        [2, 4, 0, 3, 1],
-        [2, 4, 0, 1, 3],
-        [2, 0, 1, 4, 3],
-        [2, 0, 1, 3, 4],
-        [2, 0, 4, 1, 3],
-        [2, 0, 4, 3, 1],
-        [2, 0, 3, 1, 4],
-        [2, 0, 3, 4, 1],
-        [3, 2, 1, 4, 0],
-        [3, 2, 1, 0, 4],
-        [3, 2, 4, 1, 0],
-        [3, 2, 4, 0, 1],
-        [3, 2, 0, 1, 4],
-        [3, 2, 0, 4, 1],
-        [3, 1, 2, 4, 0],
-        [3, 1, 2, 0, 4],
-        [3, 1, 4, 2, 0],
-        [3, 1, 4, 0, 2],
-        [3, 1, 0, 2, 4],
-        [3, 1, 0, 4, 2],
-        [3, 4, 1, 2, 0],
-        [3, 4, 1, 0, 2],
-        [3, 4, 2, 1, 0],
-        [3, 4, 2, 0, 1],
-        [3, 4, 0, 1, 2],
-        [3, 4, 0, 2, 1],
-        [3, 0, 2, 4, 1],
-        [3, 0, 2, 1, 4],
-        [3, 0, 4, 2, 1],
-        [3, 0, 4, 1, 2],
-        [3, 0, 1, 2, 4],
-        [3, 0, 1, 4, 2],
-        [4, 1, 3, 2, 0],
-        [4, 1, 3, 0, 2],
-        [4, 1, 2, 3, 0],
-        [4, 1, 2, 0, 3],
-        [4, 1, 0, 3, 2],
-        [4, 1, 0, 2, 3],
-        [4, 3, 1, 2, 0],
-        [4, 3, 1, 0, 2],
-        [4, 3, 2, 1, 0],
-        [4, 3, 2, 0, 1],
-        [4, 3, 0, 1, 2],
-        [4, 3, 0, 2, 1],
-        [4, 2, 3, 1, 0],
-        [4, 2, 3, 0, 1],
-        [4, 2, 1, 3, 0],
-        [4, 2, 1, 0, 3],
-        [4, 2, 0, 3, 1],
-        [4, 2, 0, 1, 3],
-        [4, 0, 1, 2, 3],
-        [4, 0, 1, 3, 2],
-        [4, 0, 2, 1, 3],
-        [4, 0, 2, 3, 1],
-        [4, 0, 3, 1, 2],
-        [4, 0, 3, 2, 1],
-        [0, 1, 3, 2, 4],
-        [0, 1, 3, 4, 2],
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 4, 3],
-        [0, 1, 4, 3, 2],
-        [0, 1, 4, 2, 3],
-        [0, 3, 1, 2, 4],
-        [0, 3, 1, 4, 2],
-        [0, 3, 2, 1, 4],
-        [0, 3, 2, 4, 1],
-        [0, 3, 4, 1, 2],
-        [0, 3, 4, 2, 1],
-        [0, 2, 3, 1, 4],
-        [0, 2, 3, 4, 1],
-        [0, 2, 1, 3, 4],
-        [0, 2, 1, 4, 3],
-        [0, 2, 4, 3, 1],
-        [0, 2, 4, 1, 3],
-        [0, 4, 1, 2, 3],
-        [0, 4, 1, 3, 2],
-        [0, 4, 2, 1, 3],
-        [0, 4, 2, 3, 1],
-        [0, 4, 3, 1, 2],
-        [0, 4, 3, 2, 1]
-      ].map { $0.map { $0 + 5 }}
+    return maxCombi.description
+  }
 
-      var maxCombi = ""
-      var maxVal = 0
+  let allInputs = [
+    [1, 2, 3, 4, 0],
+    [1, 2, 3, 0, 4],
+    [1, 2, 4, 3, 0],
+    [1, 2, 4, 0, 3],
+    [1, 2, 0, 3, 4],
+    [1, 2, 0, 4, 3],
+    [1, 3, 2, 4, 0],
+    [1, 3, 2, 0, 4],
+    [1, 3, 4, 2, 0],
+    [1, 3, 4, 0, 2],
+    [1, 3, 0, 2, 4],
+    [1, 3, 0, 4, 2],
+    [1, 4, 3, 2, 0],
+    [1, 4, 3, 0, 2],
+    [1, 4, 2, 3, 0],
+    [1, 4, 2, 0, 3],
+    [1, 4, 0, 3, 2],
+    [1, 4, 0, 2, 3],
+    [1, 0, 2, 4, 3],
+    [1, 0, 2, 3, 4],
+    [1, 0, 4, 2, 3],
+    [1, 0, 4, 3, 2],
+    [1, 0, 3, 2, 4],
+    [1, 0, 3, 4, 2],
+    [2, 1, 3, 4, 0],
+    [2, 1, 3, 0, 4],
+    [2, 1, 4, 3, 0],
+    [2, 1, 4, 0, 3],
+    [2, 1, 0, 3, 4],
+    [2, 1, 0, 4, 3],
+    [2, 3, 1, 4, 0],
+    [2, 3, 1, 0, 4],
+    [2, 3, 4, 1, 0],
+    [2, 3, 4, 0, 1],
+    [2, 3, 0, 1, 4],
+    [2, 3, 0, 4, 1],
+    [2, 4, 3, 1, 0],
+    [2, 4, 3, 0, 1],
+    [2, 4, 1, 3, 0],
+    [2, 4, 1, 0, 3],
+    [2, 4, 0, 3, 1],
+    [2, 4, 0, 1, 3],
+    [2, 0, 1, 4, 3],
+    [2, 0, 1, 3, 4],
+    [2, 0, 4, 1, 3],
+    [2, 0, 4, 3, 1],
+    [2, 0, 3, 1, 4],
+    [2, 0, 3, 4, 1],
+    [3, 2, 1, 4, 0],
+    [3, 2, 1, 0, 4],
+    [3, 2, 4, 1, 0],
+    [3, 2, 4, 0, 1],
+    [3, 2, 0, 1, 4],
+    [3, 2, 0, 4, 1],
+    [3, 1, 2, 4, 0],
+    [3, 1, 2, 0, 4],
+    [3, 1, 4, 2, 0],
+    [3, 1, 4, 0, 2],
+    [3, 1, 0, 2, 4],
+    [3, 1, 0, 4, 2],
+    [3, 4, 1, 2, 0],
+    [3, 4, 1, 0, 2],
+    [3, 4, 2, 1, 0],
+    [3, 4, 2, 0, 1],
+    [3, 4, 0, 1, 2],
+    [3, 4, 0, 2, 1],
+    [3, 0, 2, 4, 1],
+    [3, 0, 2, 1, 4],
+    [3, 0, 4, 2, 1],
+    [3, 0, 4, 1, 2],
+    [3, 0, 1, 2, 4],
+    [3, 0, 1, 4, 2],
+    [4, 1, 3, 2, 0],
+    [4, 1, 3, 0, 2],
+    [4, 1, 2, 3, 0],
+    [4, 1, 2, 0, 3],
+    [4, 1, 0, 3, 2],
+    [4, 1, 0, 2, 3],
+    [4, 3, 1, 2, 0],
+    [4, 3, 1, 0, 2],
+    [4, 3, 2, 1, 0],
+    [4, 3, 2, 0, 1],
+    [4, 3, 0, 1, 2],
+    [4, 3, 0, 2, 1],
+    [4, 2, 3, 1, 0],
+    [4, 2, 3, 0, 1],
+    [4, 2, 1, 3, 0],
+    [4, 2, 1, 0, 3],
+    [4, 2, 0, 3, 1],
+    [4, 2, 0, 1, 3],
+    [4, 0, 1, 2, 3],
+    [4, 0, 1, 3, 2],
+    [4, 0, 2, 1, 3],
+    [4, 0, 2, 3, 1],
+    [4, 0, 3, 1, 2],
+    [4, 0, 3, 2, 1],
+    [0, 1, 3, 2, 4],
+    [0, 1, 3, 4, 2],
+    [0, 1, 2, 3, 4],
+    [0, 1, 2, 4, 3],
+    [0, 1, 4, 3, 2],
+    [0, 1, 4, 2, 3],
+    [0, 3, 1, 2, 4],
+    [0, 3, 1, 4, 2],
+    [0, 3, 2, 1, 4],
+    [0, 3, 2, 4, 1],
+    [0, 3, 4, 1, 2],
+    [0, 3, 4, 2, 1],
+    [0, 2, 3, 1, 4],
+    [0, 2, 3, 4, 1],
+    [0, 2, 1, 3, 4],
+    [0, 2, 1, 4, 3],
+    [0, 2, 4, 3, 1],
+    [0, 2, 4, 1, 3],
+    [0, 4, 1, 2, 3],
+    [0, 4, 1, 3, 2],
+    [0, 4, 2, 1, 3],
+    [0, 4, 2, 3, 1],
+    [0, 4, 3, 1, 2],
+    [0, 4, 3, 2, 1]
+  ].map { $0.map { $0 + 5 }}
 
-      for input in allInputs {
-        var nextInput = 0
-        for index in input {
-          let intCode = IntCode(code: code, inputs: [index, nextInput])
+  var maxCombi = ""
+  var maxVal = 0
+  var code: [Int] = []
 
-          do {
-            let result = try intCode.run()
-            print(result)
-            nextInput = result[0]
-          } catch {
-            print("Error: \(error)")
-            fatalError("Error running IntCode: \(error)")
-          }
-        }
-
-        if nextInput > maxVal {
-          maxCombi = input.description + " " + nextInput.description
-          maxVal = nextInput
-        }
-      }
-      return maxCombi
+  private func runInput(index: Int) {
+    if index == allInputs.count {
+      print("FINAL RESULT: \(maxCombi)")
+      exit(EXIT_SUCCESS)
     }
-    return results.description
+    let input = allInputs[index]
+
+    let amps = input.map {
+      IntCode(code: code, input: $0)
+    }
+
+    for (int, amp) in amps.enumerated() {
+      amp.outputReceiver = amps[(int + 1) % 5]
+    }
+
+    var outputsReceived: [Int] = []
+    let group = DispatchGroup()
+
+    group.enter()
+    amps[0].run(input: 0) { output in
+      // print("finished: 0")
+      group.leave()
+      outputsReceived.append(output ?? 0)
+      amps[0].onHalt = nil
+    }
+    for int in 1..<amps.count {
+      let amp = amps[int]
+      group.enter()
+      amp.run { output in
+        // print("finished: \(int)")
+        group.leave()
+        outputsReceived.append(output ?? 0)
+        amps[int].onHalt = nil
+      }
+    }
+
+    group.notify(queue: DispatchQueue.main) {
+      print("all finished, index: \(index)")
+      let result = outputsReceived.max()!
+      print(result)
+      if result > self.maxVal {
+        self.maxCombi = input.description + " " + result.description
+        self.maxVal = result
+      }
+      self.runInput(index: index + 1)
+    }
   }
 }
 
@@ -350,21 +380,50 @@ enum IntCodeError: Error {
   case unexpectedEndProgram
 }
 
-class IntCode {
+protocol IntCodeOutputReceiver: AnyObject {
+  func handleValue(_ value: Int)
+}
+
+class IntCode: IntCodeOutputReceiver {
   var code: [Int]
   var index = 0
+  weak var outputReceiver: IntCodeOutputReceiver?
+  var onHalt: ((Int?) -> Void)?
   var inputs: [Int]
-  var outputs: [Int] = []
+  var output: Int?
 
-  init(code: [Int], inputs: [Int]) {
-    self.code = code
-    self.inputs = inputs
+  func handleValue(_ value: Int) {
+    inputs.append(value)
+    DispatchQueue.main.async {
+      do {
+        try self.runNext()
+      } catch {
+        print("Error: \(error)")
+        fatalError("Error running IntCode: \(error)")
+      }
+    }
   }
 
-  func run(resultIndex: Int = 0) throws -> [Int] {
-    try runNext()
+  init(code: [Int], input: Int) {
+    self.code = code
+    self.inputs = [input]
+  }
+
+  func run(input: Int? = nil, onHalt: @escaping (Int?) -> Void) {
+    self.onHalt = onHalt
+    if let input = input {
+      inputs.append(input)
+    }
+
+    DispatchQueue.main.async {
+      do {
+        try self.runNext()
+      } catch {
+        print("Error: \(error)")
+        fatalError("Error running IntCode: \(error)")
+      }
+    }
     // print(code)
-    return outputs
   }
 
   private func runNext() throws {
@@ -387,15 +446,14 @@ class IntCode {
     case .multiply:
       try perform3ParamOperation(opcode: opcodeString, oper: *)
     case .input:
-      let input: Int
-      if !inputs.isEmpty {
-        input = inputs.removeFirst()
-      } else {
-        input = outputs.removeFirst()
+      if inputs.isEmpty {
+        return // Pause
       }
 
+      let input = inputs.removeFirst()
+
       let inputIndex = code[index + 1]
-      print("input: \(input) -> \(inputIndex)")
+      // print("input: \(input) -> \(inputIndex) (\(code[(code.count - 3)...]))")
 
       guard inputIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
 
@@ -414,6 +472,7 @@ class IntCode {
     case .equals:
       try perform3ParamOperation(opcode: opcodeString, oper: { $0 == $1 ? 1 : 0 })
     case .endProgram:
+      onHalt?(output)
       return
     }
   }
@@ -471,8 +530,9 @@ class IntCode {
       throw IntCodeError.unexpectedOpcode
     }
 
-    print("output: \(value) <- \(outputIndex)")
-    outputs.append(value)
+    // print("output: \(value) <- \(outputIndex)")
+    output = value
+    outputReceiver?.handleValue(value)
     index += 2
 
     try runNext()
@@ -581,3 +641,4 @@ let solution = Solution(part: part, filename: filename)
 let result = solution.get()
 
 print(result)
+dispatchMain()
