@@ -29,11 +29,85 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let pixels = file.lines[0]
+    let dimensions: (x: Int, y: Int)
+    if file.filename == "input.txt" {
+      dimensions = (x: 25, y: 6)
+    } else {
+      dimensions = (x: 3, y: 2)
+    }
+    let imgSize = dimensions.x * dimensions.y
+    let layers = pixels.chunked(into: imgSize)
+    let hists: [[Character: Int]] = layers.map { layer in
+      var hist: [Character: Int] = [:]
+
+      for char in layer {
+        hist[char, default: 0] += 1
+      }
+
+      return hist
+    }
+
+    let minHist = hists.min {
+      ($0["0"] ?? 0) < ($1["0"] ?? 0)
+    }!
+
+    return ((minHist["1"] ?? 0) * (minHist["2"] ?? 0)).description
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+   let pixels = file.lines[0]
+    let dimensions: (x: Int, y: Int)
+    if file.filename == "input.txt" {
+      dimensions = (x: 25, y: 6)
+    } else {
+      dimensions = (x: 2, y: 2)
+    }
+    let imgSize = dimensions.x * dimensions.y
+    let layers = pixels.chunked(into: imgSize)
+
+    var result: [Character] = Array(repeating: "-", count: imgSize)
+
+    for layer in layers {
+      for ind in 0..<imgSize where result[ind] == "-" {
+        let layInd = layer.index(layer.startIndex, offsetBy: ind)
+        if layer[layInd] != "2" {
+          result[ind] = layer[layInd]
+        }
+      }
+    }
+    let grid = result.chunked(into: dimensions.x)
+    for line in grid {
+      for item in line {
+        print(item == "1" ? "X" : " ", terminator: " ")
+      }
+      print("")
+    }
+    return grid.description
+  }
+}
+
+extension String {
+  func chunked(into size: Int) -> [String] {
+    var ind = startIndex
+    var curCount = count
+    var chunks: [String] = []
+    while curCount > 0 {
+      let newIndex = index(ind, offsetBy: min(size, curCount))
+      let str = String(self[ind..<newIndex])
+      ind = newIndex
+      curCount -= size
+      chunks.append(str)
+    }
+    return chunks
+  }
+}
+
+extension Array {
+  func chunked(into size: Int) -> [[Element]] {
+    return stride(from: 0, to: count, by: size).map {
+      Array(self[$0 ..< Swift.min($0 + size, count)])
+    }
   }
 }
 
