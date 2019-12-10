@@ -38,12 +38,12 @@ class Solution {
   }
 
   private func solveTwo(file: File) -> String {
-    // let lines = file.lines
-    // let line = lines[0]
-    // code = line.indexDict
-    // runInput(index: 0)
-
-    return "TODO"
+    let lines = file.lines
+    let line = lines[0]
+    code = line.indexDict
+    allInputs = [[2]]
+    runInput(index: 0)
+    return maxCombi.description
   }
 
   var allInputs = [[1]]
@@ -129,12 +129,7 @@ class IntCode: IntCodeOutputReceiver {
   func handleValue(_ value: Int) {
     inputs.append(value)
     DispatchQueue.main.async {
-      do {
-        try self.runNext()
-      } catch {
-        print("Error: \(error)")
-        fatalError("Error running IntCode: \(error)")
-      }
+      self.runNext()
     }
   }
 
@@ -150,72 +145,55 @@ class IntCode: IntCodeOutputReceiver {
     }
 
     DispatchQueue.main.async {
-      do {
-        try self.runNext()
-      } catch {
-        print("Error: \(error)")
-        fatalError("Error running IntCode: \(error)")
-      }
+      self.runNext()
     }
     // print(code)
   }
 
-  private func runNext() throws {
-    // print("index: \(index): \(code[index])")
-    guard index < code.count else { throw IntCodeError.indexOutOfBounds }
+  private func runNext() {
+    DispatchQueue.main.async {
+      // print("index: \(index): \(code[index])")
+      guard self.index < self.code.count else { fatalError("IntCodeError.indexOutOfBounds") }
 
-    let opcode = code[index]!
-    let typeInt = opcode % 100
+      let opcode = self.code[self.index]!
+      let typeInt = opcode % 100
 
-    guard let type = InstructionType(rawValue: typeInt) else {
-      throw IntCodeError.unexpectedOpcode
-    }
-
-    // print("\(type) raw: " + opcode.description)
-    let opcodeString = (opcode / 100).description
-
-    switch type {
-    case .add:
-      try perform3ParamOperation(opcode: opcodeString, oper: +)
-    case .multiply:
-      try perform3ParamOperation(opcode: opcodeString, oper: *)
-    case .input:
-      if inputs.isEmpty {
-        return // Pause
+      guard let type = InstructionType(rawValue: typeInt) else {
+        fatalError("IntCodeError.unexpectedOpcode")
       }
 
-      let input = inputs.removeFirst()
+      // print("\(type) raw: " + opcode.description)
+      let opcodeString = (opcode / 100).description
 
-      let inputIndex = code[index + 1]!
-      // print("input: \(input) -> \(inputIndex) (\(code[(code.count - 3)...]))")
-
-      // guard inputIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
-
-      code[inputIndex] = input
-      index += 2
-
-      try runNext()
-    case .output:
-      try performOutputOperation(opcode: opcodeString)
-    case .jumpIfTrue:
-      try performJumpOperation(opcode: opcodeString, condition: true)
-    case .jumpIfFalse:
-      try performJumpOperation(opcode: opcodeString, condition: false)
-    case .lessThan:
-      try perform3ParamOperation(opcode: opcodeString, oper: { $0 < $1 ? 1 : 0 })
-    case .equals:
-      try perform3ParamOperation(opcode: opcodeString, oper: { $0 == $1 ? 1 : 0 })
-    case .setRelativeBase:
-      try performRelativeBaseOperation(opcode: opcodeString)
-    case .endProgram:
-      onHalt?(output)
-      return
+      switch type {
+      case .add:
+        self.perform3ParamOperation(opcode: opcodeString, oper: +)
+      case .multiply:
+        self.perform3ParamOperation(opcode: opcodeString, oper: *)
+      case .input:
+        self.performInputOperation(opcode: opcodeString)
+      case .output:
+        self.performOutputOperation(opcode: opcodeString)
+      case .jumpIfTrue:
+        self.performJumpOperation(opcode: opcodeString, condition: true)
+      case .jumpIfFalse:
+        self.performJumpOperation(opcode: opcodeString, condition: false)
+      case .lessThan:
+        self.perform3ParamOperation(opcode: opcodeString, oper: { $0 < $1 ? 1 : 0 })
+      case .equals:
+        self.perform3ParamOperation(opcode: opcodeString, oper: { $0 == $1 ? 1 : 0 })
+      case .setRelativeBase:
+        self.performRelativeBaseOperation(opcode: opcodeString)
+      case .endProgram:
+        self.onHalt?(self.output)
+        return
+      }
     }
   }
 
-  private func perform3ParamOperation(opcode: String, oper: (Int, Int) -> Int) throws {
+  private func perform3ParamOperation(opcode: String, oper: (Int, Int) -> Int) {
     var opcode = opcode
-    guard index + 3 < code.count else { throw IntCodeError.operatorExceedsBounds }
+    guard index + 3 < code.count else { fatalError("IntCodeError.operatorExceedsBounds") }
 
     let lhValue: Int
     switch opcode.popLast() ?? "0" {
@@ -230,7 +208,7 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[lhsIndex, default: 0]
       lhValue = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
     let rhValue: Int
@@ -246,21 +224,53 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[rhsIndex, default: 0]
       rhValue = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
-    // TODO relative base for output??
-    let resultIndex = code[index + 3]!
+    let resultIndex: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      resultIndex = code[index + 3]!
+    case "2":
+      resultIndex = code[index + 3]! + relativeBase
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
 
     // guard resultIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
 
     code[resultIndex] = oper(lhValue, rhValue)
     index += 4
 
-    try runNext()
+    runNext()
   }
 
-  private func performOutputOperation(opcode: String) throws {
+  private func performInputOperation(opcode: String) {
+    if inputs.isEmpty {
+      return // Pause
+    }
+
+    let input = inputs.removeFirst()
+    let inputIndex: Int
+
+    switch opcode.last ?? "0" {
+    case "0":
+      inputIndex = code[index + 1]!
+    case "2":
+      inputIndex = code[index + 1]! + relativeBase
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // print("input: \(input) -> \(inputIndex) (\(code[(code.count - 3)...]))")
+
+    code[inputIndex] = input
+    index += 2
+
+    runNext()
+  }
+
+  private func performOutputOperation(opcode: String) {
     let value: Int
     var outputIndex = index + 1
 
@@ -276,7 +286,7 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[outputIndex, default: 0]
       value = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
     print("output: \(value) <- \(outputIndex)")
@@ -284,10 +294,10 @@ class IntCode: IntCodeOutputReceiver {
     outputReceiver?.handleValue(value)
     index += 2
 
-    try runNext()
+    runNext()
   }
 
-  private func performRelativeBaseOperation(opcode: String) throws {
+  private func performRelativeBaseOperation(opcode: String) {
     let value: Int
     var relativeBaseIndex = index + 1
 
@@ -303,20 +313,20 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[relativeBaseIndex, default: 0]
       value = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
     // print("output: \(value) <- \(outputIndex)")
     relativeBase += value
     index += 2
 
-    try runNext()
+    runNext()
   }
 
-  func performJumpOperation(opcode: String, condition: Bool) throws {
+  func performJumpOperation(opcode: String, condition: Bool) {
     // print("jump")
     var opcode = opcode
-    guard index + 2 < code.count else { throw IntCodeError.operatorExceedsBounds }
+    guard index + 2 < code.count else { fatalError("IntCodeError.operatorExceedsBounds") }
 
     let testValue: Int
     switch opcode.popLast() ?? "0" {
@@ -331,7 +341,7 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[testIndex, default: 0]
       testValue = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
     let jumpValue: Int
@@ -347,10 +357,9 @@ class IntCode: IntCodeOutputReceiver {
       let val = code[jumpIndex, default: 0]
       jumpValue = val
     default:
-      throw IntCodeError.unexpectedOpcode
+      fatalError("IntCodeError.unexpectedOpcode")
     }
 
-    // TODO relative output?
     // print("testValue: \(testValue), condition: \(condition), willJump: \((testValue != 0) == condition)")
     if (testValue != 0) == condition {
       // guard jumpValue < code.count, jumpValue >= 0 else { throw IntCodeError.operatorRegisterExceedsBounds }
@@ -360,7 +369,7 @@ class IntCode: IntCodeOutputReceiver {
       index += 3
     }
 
-    try runNext()
+    runNext()
   }
 }
 
