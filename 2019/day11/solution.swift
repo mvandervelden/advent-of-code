@@ -32,75 +32,136 @@ class Solution {
     let lines = file.lines
     let line = lines[0]
     code = line.indexDict
-
-    runInput(index: 0)
-    return maxCombi.description
+    runInput()
+    return paintedPanels.count.description
   }
 
   private func solveTwo(file: File) -> String {
     let lines = file.lines
     let line = lines[0]
     code = line.indexDict
-    allInputs = [[2]]
-    runInput(index: 0)
-    return maxCombi.description
+    panels[0, default: [:]][0] = 1
+    runInput()
+    return paintedPanels.count.description
   }
 
-  var allInputs = [[1]]
-
-  var maxCombi = "initial"
-  var maxVal = 0
   var code: [Int: Int] = [:]
+  var paintedPanels: Set<Point> = []
+  var panels: [Int: [Int: Int]] = [:]
+  var currentPosition = (x: 0, y: 0, orientation: Orientation.up)
+  var nextOutputWillPaint = true
+  var program: IntCode!
 
-  private func runInput(index: Int) {
-    // print(allInputs.count)
-    // print(index)
-    if index == allInputs.count {
-      print("FINAL RESULT: \(maxCombi)")
-      exit(EXIT_SUCCESS)
+  private func printPanels() {
+    let minY = panels.keys.min()!
+    let maxY = panels.keys.max()!
+    let minX = panels.values.flatMap { $0.keys }.min()!
+    let maxX = panels.values.flatMap { $0.keys }.max()!
+    print("(\(minX),\(minY)),(\(maxX),\(maxY))")
+    for y in minY...maxY {
+      for x in minX...maxX {
+        if let val = panels[y]?[x] {
+          if val == 0 {
+            print(" ", terminator: "")
+          } else {
+            print("#", terminator: "")
+          }
+        } else {
+          print(" ", terminator: "")
+        }
+      }
+      print("")
     }
-    // print("is this run")
-    let input = allInputs[index]
+  }
 
-    let amps = input.map {
-      IntCode(code: code, input: $0)
-    }
-    // print(amps)
-    // for (int, amp) in amps.enumerated() {
-    //   amp.outputReceiver = amps[(int + 1) % 5]
-    // }
+  private func runInput() {
+    let input = panels[currentPosition.y]?[currentPosition.x] ?? 0
 
-    var outputsReceived: [Int] = []
+    program = IntCode(code: code, input: input)
+    program.outputReceiver = self
+
     let group = DispatchGroup()
 
     group.enter()
-    amps[0].run(input: 0) { output in
-      print("finished: 0")
+    program.run() { output in
+      print("finished")
+      self.program.onHalt = nil
       group.leave()
-      outputsReceived.append(output ?? 0)
-      amps[0].onHalt = nil
     }
-    // for int in 1..<amps.count {
-    //   let amp = amps[int]
-    //   group.enter()
-    //   amp.run { output in
-    //     // print("finished: \(int)")
-    //     group.leave()
-    //     outputsReceived.append(output ?? 0)
-    //     amps[int].onHalt = nil
-    //   }
-    // }
 
     group.notify(queue: DispatchQueue.main) {
-      print("all finished, index: \(index)")
-      let result = outputsReceived.max()!
-      print(result)
-      if result > self.maxVal {
-        self.maxCombi = input.description + " " + result.description
-        self.maxVal = result
-      }
-      self.runInput(index: index + 1)
+      // print("all finished, position: \(self.currentPosition)")
+      // print("\(self.paintedPanels)")
+      self.printPanels()
+      print("FINAL RESULT: \(self.paintedPanels.count)")
+      exit(EXIT_SUCCESS)
     }
+  }
+}
+
+extension Solution: IntCodeOutputReceiver {
+  func handleValue(_ value: Int) {
+    // print("pos: \(currentPosition), paints: \(nextOutputWillPaint), value: \(value).\n      panels: \(panels)\n      painted: \(paintedPanels)")
+    // print("handling value: \(value). willPaint: \(nextOutputWillPaint). pos: \(currentPosition)")
+    // if paintedPanels.count > 20 {
+    //   print("all finished, position: \(self.currentPosition)")
+    //   print("\(self.paintedPanels)")
+    //   print("FINAL RESULT: \(self.paintedPanels.count)")
+    //   exit(EXIT_SUCCESS)
+    //   return
+    // }
+    if nextOutputWillPaint {
+      panels[currentPosition.y, default: [:]][currentPosition.x] = value
+      paintedPanels.insert(Point(x: currentPosition.x, y: currentPosition.y))
+    } else {
+      currentPosition.orientation = currentPosition.orientation.next(turn: value)
+
+      switch currentPosition.orientation {
+      case .up:
+        currentPosition.y -= 1
+      case .right:
+        currentPosition.x += 1
+      case .down:
+        currentPosition.y += 1
+      case .left:
+        currentPosition.x -= 1
+      }
+      // print("pos: \(currentPosition).\n      panels: \(panels)\n      painted: \(paintedPanels)")
+
+      program.handleValue(panels[currentPosition.y]?[currentPosition.x] ?? 0)
+    }
+
+    nextOutputWillPaint.toggle()
+  }
+}
+
+enum Orientation: Int, CustomStringConvertible {
+  case up = 0, right, down, left
+
+  func next(turn: Int) -> Orientation {
+    if turn == 1 {
+      return Orientation(rawValue: (self.rawValue + turn) % 4)!
+    } else {
+      return Orientation(rawValue: (self.rawValue - 1 + 4) % 4)!
+    }
+  }
+
+  var description: String {
+    switch self {
+    case .up: return "^"
+    case .right: return ">"
+    case .down: return "v"
+    case .left: return "<"
+    }
+  }
+}
+
+struct Point: Hashable, CustomStringConvertible {
+  let x: Int
+  let y: Int
+
+  var description: String {
+    return "(\(x),\(y))"
   }
 }
 
@@ -289,7 +350,7 @@ class IntCode: IntCodeOutputReceiver {
       fatalError("IntCodeError.unexpectedOpcode")
     }
 
-    print("output: \(value) <- \(outputIndex)")
+    // print("output: \(value) <- \(outputIndex)")
     output = value
     outputReceiver?.handleValue(value)
     index += 2
