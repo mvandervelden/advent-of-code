@@ -29,9 +29,27 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
+    return slv(file: file, requestedAmount: 1).description
+  }
+
+  private func solveTwo(file: File) -> String {
+    var result = 0
+
+    let goal = 1_000_000_000_000
+    let requestedAmount = 3_061_522
+    // while result < goal {
+      // requestedAmount *= 2
+      result = slv(file: file, requestedAmount: requestedAmount)
+    // }
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    return "\(formatter.string(from: requestedAmount as NSNumber)!), \(formatter.string(from: result as NSNumber)!), \(formatter.string(from: result - goal as NSNumber)!), "
+  }
+
+  private func slv(file: File, requestedAmount: Int) -> Int {
     let reactions = file.lines.map(Reaction.init)
 
-    var elementsRequested: [String: Int] = ["FUEL": 1]
+    var elementsRequested: [String: Int] = ["FUEL": requestedAmount]
     var remainingReactions = reactions
     var oreNeeded = 0
 
@@ -67,11 +85,7 @@ class Solution {
     }
 
     print(elementsRequested)
-    return oreNeeded.description
-  }
-
-  private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    return oreNeeded
   }
 }
 
