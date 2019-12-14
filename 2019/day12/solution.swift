@@ -28,12 +28,152 @@ class Solution {
     }
   }
 
+  var planets: [Planet] = []
+
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let locations = file.lines.map(Point.init)
+    let velocities = Array(repeating: Point(x: 0, y: 0, z: 0), count: 4)
+    planets = zip(locations, velocities).map(Planet.init)
+
+    let stepsTotal = 1000
+
+    for _ in 0..<stepsTotal {
+      for planet in planets {
+        print(planet)
+      }
+      print("")
+      doStep()
+    }
+
+    for planet in planets {
+      print(planet)
+    }
+    let total = planets.map { $0.energy }.reduce(0, +)
+    return "total: \(total)"
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+let locations = file.lines.map(Point.init)
+    let velocities = Array(repeating: Point(x: 0, y: 0, z: 0), count: 4)
+    planets = zip(locations, velocities).map(Planet.init)
+
+    let initialState = planets
+    print("test equals \(initialState == planets)")
+    doStep()
+
+    var iterations = 1
+    var cycles: [Int] = [0, 0, 0, 0]
+    var foundCycle = [false, false, false, false]
+
+    while foundCycle != [true, true, true, true] {
+      // for planet in planets {
+      //   print(planet)
+      // }
+      // print("")
+      doStep()
+      iterations += 1
+      for i in 0..<4 {
+        let planet = planets[i]
+        if planet == initialState[i] {
+          foundCycle[i] = true
+          cycles[i] = iterations
+          print("found cycle for moon \(i): \(iterations)")
+        }
+      }
+    }
+
+    // for planet in planets {
+    //   print(planet)
+    // }
+
+    return "total: \(cycles)" }
+
+  private func doStep() {
+    for i in 0..<4 {
+      let loc = planets[i].location
+      var newVelocity = planets[i].velocity
+
+      for otherPlanet in planets where loc != otherPlanet.location {
+        let other = otherPlanet.location
+        if loc.x < other.x {
+          newVelocity.x += 1
+        } else if loc.x > other.x {
+          newVelocity.x -= 1
+        }
+
+        if loc.y < other.y {
+          newVelocity.y += 1
+        } else if loc.y > other.y {
+          newVelocity.y -= 1
+        }
+
+        if loc.z < other.z {
+          newVelocity.z += 1
+        } else if loc.z > other.z {
+          newVelocity.z -= 1
+        }
+      }
+      planets[i].velocity = newVelocity
+    }
+
+    for i in 0..<4 {
+      var newLocation = planets[i].location
+      let velocity = planets[i].velocity
+      newLocation.x += velocity.x
+      newLocation.y += velocity.y
+      newLocation.z += velocity.z
+      planets[i].location = newLocation
+    }
+  }
+}
+
+struct Planet: CustomStringConvertible, Equatable {
+  var location: Point
+  var velocity: Point
+
+  var energy: Int {
+    print("energy: \(location.sum) * \(velocity.sum)")
+    return location.sum * velocity.sum
+  }
+
+  var description: String {
+    return "pos=\(location), vel=\(velocity)"
+  }
+}
+
+struct Point: CustomStringConvertible, Equatable {
+  var x: Int
+  var y: Int
+  var z: Int
+
+  var sum: Int {
+    return abs(x) + abs(y) + abs(z)
+  }
+
+  static let removeChars: Set<Character> = ["<", ">", " "]
+
+  init(x: Int, y: Int, z: Int) {
+    self.x = x
+    self.y = y
+    self.z = z
+  }
+
+  init(string: String) {
+    var string = string
+    string.removeAll { Point.removeChars.contains($0) }
+    let elements: [Int] = string.split(separator: ",").map { elem in
+      // print(elem)
+      let last = elem.split(separator: "=").last!
+      // print(last)
+      return Int(String(last))!
+    }
+    x = elements[0]
+    y = elements[1]
+    z = elements[2]
+  }
+
+  var description: String {
+    return "<x=\(x), y=\(y), z=\(z)>"
   }
 }
 
