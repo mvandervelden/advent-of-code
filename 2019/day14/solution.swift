@@ -29,11 +29,80 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let reactions = file.lines.map(Reaction.init)
+
+    var elementsRequested: [String: Int] = ["FUEL": 1]
+    var remainingReactions = reactions
+    var oreNeeded = 0
+
+    while !elementsRequested.isEmpty {
+      print(elementsRequested)
+      // select element
+      let currentElement = elementsRequested.keys.first { elem in
+        return !remainingReactions.contains { reaction in
+          return reaction.inputs.contains { $0.elem == elem }
+        }
+      }!
+
+      let currentRequestedAmount = elementsRequested[currentElement]!
+
+      elementsRequested[currentElement] = nil
+
+      // select reaction
+      let currentReaction = remainingReactions.first { $0.output.elem == currentElement }!
+
+      // calculate new elements/ore needed
+      let multiplier = currentRequestedAmount / currentReaction.output.amount +
+        (currentRequestedAmount % currentReaction.output.amount == 0 ? 0 : 1)
+      for input in currentReaction.inputs {
+        let amount = input.amount * multiplier
+        if input.elem == "ORE" {
+          oreNeeded += amount
+        } else {
+          elementsRequested[input.elem, default: 0] += amount
+        }
+      }
+      // remove reaction from remaining
+      remainingReactions.removeAll { $0 == currentReaction }
+    }
+
+    print(elementsRequested)
+    return oreNeeded.description
   }
 
   private func solveTwo(file: File) -> String {
     return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+  }
+}
+
+struct Reaction: CustomStringConvertible, Hashable {
+  struct Part: Hashable {
+    let elem: String
+    let amount: Int
+  }
+
+  let inputs: [Part]
+  let output: Part
+
+  init(string: String) {
+    let parts = string.split(separator: ">")
+    let outputElems = parts.last!.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
+    output = Part(elem: String(outputElems.last!), amount: Int(outputElems.first!)!)
+
+    var cleanFirst = parts.first!
+    cleanFirst.removeLast()
+    let inputElems = cleanFirst.split(separator: ",")
+
+    inputs = inputElems.map { elem in
+      let compString = elem.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
+      return Part(elem: String(compString.last!), amount: Int(compString.first!)!)
+    }
+  }
+
+  var description: String {
+    let inputsString = inputs.map { "\($0.amount) \($0.elem)" }.joined(separator: ",")
+    let outputString = "\(output.amount) \(output.elem)"
+    return "\(inputsString) => \(outputString)"
   }
 }
 
