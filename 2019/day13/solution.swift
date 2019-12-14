@@ -44,7 +44,6 @@ class Solution {
   var grid: [Int: [Int: Int]] = [:]
   var currentPrintInstruction: (x: Int?, y: Int?, type: Int?) = (x: nil, y: nil, type: nil)
   var currentPrintPosition = 0
-  // var currentPosition = (x: 0, y: 0, orientation: Orientation.up)
   var program: IntCode!
 
   private func printGrid() {
@@ -70,7 +69,6 @@ class Solution {
   }
 
   private func runInput() {
-    // let input = grid[currentPosition.y]?[currentPosition.x] ?? 0
     program = IntCode(code: code)
     program.outputReceiver = self
 
@@ -84,8 +82,6 @@ class Solution {
     }
 
     group.notify(queue: DispatchQueue.main) {
-      // print("all finished, position: \(self.currentPosition)")
-      // print("\(self.paintedPanels)")
       self.printGrid()
       var blockTileCount = 0
       for y in self.grid.keys {
@@ -101,8 +97,6 @@ class Solution {
 
 extension Solution: IntCodeOutputReceiver {
   func handleValue(_ value: Int) {
-    // print("pos: \(currentPosition), paints: \(nextOutputWillPaint), value: \(value).\n      grid: \(grid)\n      painted: \(paintedPanels)")
-    // print("handling value: \(value). willPaint: \(nextOutputWillPaint). pos: \(currentPosition)")
     switch currentPrintPosition {
     case 0:
       currentPrintInstruction = (x: value, y: nil, type: nil)
