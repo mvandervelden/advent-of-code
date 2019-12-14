@@ -37,23 +37,35 @@ class Solution {
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
-  }
+    let lines = file.lines
+    let line = lines[0]
+    code = line.indexDict
+    code[0] = 2
+    inputInstructions = Array(repeating: 0, count: 3)
+    runInput()
+    return "TODO"  }
 
   var code: [Int: Int] = [:]
   var grid: [Int: [Int: Int]] = [:]
   var currentPrintInstruction: (x: Int?, y: Int?, type: Int?) = (x: nil, y: nil, type: nil)
   var currentPrintPosition = 0
   var program: IntCode!
+  var inputInstructions: [Int] = []
+  var score = 0
+  var steps = 0
+  var isFirstDrop: Bool {
+    return  steps < 4
+  }
+  var prevBallPos = (x: 19, y: 20)
 
   private func printGrid() {
-    let minY = grid.keys.min()!
+    // let minY = grid.keys.min()!
     let maxY = grid.keys.max()!
-    let minX = grid.values.flatMap { $0.keys }.min()!
+    // let minX = grid.values.flatMap { $0.keys }.min()!
     let maxX = grid.values.flatMap { $0.keys }.max()!
-    print("(\(minX),\(minY)),(\(maxX),\(maxY))")
-    for y in minY...maxY {
-      for x in minX...maxX {
+    // print("(\(minX),\(minY)),(\(maxX),\(maxY))")
+    for y in 0...maxY {
+      for x in 0...maxX {
         if let val = grid[y]?[x] {
           if val == 0 {
             print(" ", terminator: "")
@@ -70,6 +82,7 @@ class Solution {
 
   private func runInput() {
     program = IntCode(code: code)
+    program.inputs = inputInstructions
     program.outputReceiver = self
 
     let group = DispatchGroup()
@@ -105,10 +118,34 @@ extension Solution: IntCodeOutputReceiver {
     case 2:
       currentPrintInstruction = (x: currentPrintInstruction.x, y: currentPrintInstruction.y, type: value)
       grid[currentPrintInstruction.y!, default: [:]][currentPrintInstruction.x!] = value
+      if value == 4 {
+        steps += 1
+        print("\(steps) ball: \(currentPrintInstruction)")
+        if !isFirstDrop {
+          switch currentPrintInstruction.x! - prevBallPos.x {
+          case ..<0:
+            program.inputs.append(-1)
+          case 0:
+            program.inputs.append(0)
+          default:
+            program.inputs.append(1)
+          }
+        }
+        prevBallPos = (x: currentPrintInstruction.x!, y: currentPrintInstruction.y!)
+      }
+      if value == 3 {
+        print("padd: \(currentPrintInstruction)")
+        printGrid()
+      }
     default:
       fatalError("unexpected print position: \(currentPrintPosition)")
     }
-
+    let newScore = grid[0]?[-1] ?? 0
+    if newScore != score {
+      score = newScore
+      print("steps: \(steps) score: \(score)")
+      printGrid()
+    }
     currentPrintPosition = (currentPrintPosition + 1) % 3
   }
 }
