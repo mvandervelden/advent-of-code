@@ -29,12 +29,358 @@ class Solution {
   }
 
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let lines = file.lines
+    let line = lines[0]
+    code = line.indexDict
+    runInput()
+    return "TODO"
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    return "TODO"
   }
+
+  var code: [Int: Int] = [:]
+  var grid: [Int: [Int: String]] = [:]
+  var position: (x: Int, y: Int) = (x: 0, y: 0)
+  var currentInstruction = 1
+  var program: IntCode!
+
+  private func printGrid() {
+    let minY = ([position.y] + grid.keys).min()!
+    let maxY = ([position.y] + grid.keys).max()!
+    let minX = ([position.x] + grid.values.flatMap { $0.keys }).min()!
+    let maxX = ([position.x] + grid.values.flatMap { $0.keys }).max()!
+    // print("(\(minX),\(minY)),(\(maxX),\(maxY))")
+    for y in minX...maxY {
+      for x in maxX...maxX {
+        if y == positiony && x == position.x {
+          print("D", terminator: "")
+        } else if let val = grid[y]?[x] {
+          print(val, terminator: "")
+        } else {
+          print(" ", terminator: "")
+        }
+      }
+      print("")
+    }
+  }
+
+  private func runInput() {
+    program = IntCode(code: code)
+    program.outputReceiver = self
+    let group = DispatchGroup()
+
+    group.enter()
+    program.run(input: currentInstruction) { output in
+      print("finished")
+      self.program.onHalt = nil
+      group.leave()
+    }
+
+    group.notify(queue: DispatchQueue.main) {
+      self.printGrid()
+
+      print("FINAL RESULT: TODO")
+      exit(EXIT_SUCCESS)
+    }
+  }
+}
+
+extension Solution: IntCodeOutputReceiver {
+  func handleValue(_ value: Int) {
+    switch value {
+    case 0:
+
+    default:
+      fatalError("unexpected print position: \(currentPrintPosition)")
+    }
+  }
+}
+
+enum IntCodeError: Error {
+  case indexOutOfBounds
+  case unexpectedOpcode
+  case operatorExceedsBounds
+  case operatorRegisterExceedsBounds
+  case missingInput
+  case unexpectedEndProgram
+}
+
+protocol IntCodeOutputReceiver: AnyObject {
+  func handleValue(_ value: Int)
+}
+
+class IntCode: IntCodeOutputReceiver {
+  var code: [Int: Int]
+  var index = 0
+  weak var outputReceiver: IntCodeOutputReceiver?
+  var onHalt: ((Int?) -> Void)?
+  var inputs: [Int]
+  var output: Int?
+  var relativeBase = 0
+
+  func handleValue(_ value: Int) {
+    inputs.append(value)
+    DispatchQueue.main.async {
+      self.runNext()
+    }
+  }
+
+  init(code: [Int: Int], input: Int? = nil) {
+    self.code = code
+    self.inputs = []
+    if let input = input {
+      inputs.append(input)
+    }
+  }
+
+  func run(input: Int? = nil, onHalt: @escaping (Int?) -> Void) {
+    self.onHalt = onHalt
+    if let input = input {
+      inputs.append(input)
+    }
+
+    DispatchQueue.main.async {
+      self.runNext()
+    }
+    // print(code)
+  }
+
+  private func runNext() {
+    DispatchQueue.main.async {
+      // print("index: \(index): \(code[index])")
+      guard self.index < self.code.count else { fatalError("IntCodeError.indexOutOfBounds") }
+
+      let opcode = self.code[self.index]!
+      let typeInt = opcode % 100
+
+      guard let type = InstructionType(rawValue: typeInt) else {
+        fatalError("IntCodeError.unexpectedOpcode")
+      }
+
+      // print("\(type) raw: " + opcode.description)
+      let opcodeString = (opcode / 100).description
+
+      switch type {
+      case .add:
+        self.perform3ParamOperation(opcode: opcodeString, oper: +)
+      case .multiply:
+        self.perform3ParamOperation(opcode: opcodeString, oper: *)
+      case .input:
+        self.performInputOperation(opcode: opcodeString)
+      case .output:
+        self.performOutputOperation(opcode: opcodeString)
+      case .jumpIfTrue:
+        self.performJumpOperation(opcode: opcodeString, condition: true)
+      case .jumpIfFalse:
+        self.performJumpOperation(opcode: opcodeString, condition: false)
+      case .lessThan:
+        self.perform3ParamOperation(opcode: opcodeString, oper: { $0 < $1 ? 1 : 0 })
+      case .equals:
+        self.perform3ParamOperation(opcode: opcodeString, oper: { $0 == $1 ? 1 : 0 })
+      case .setRelativeBase:
+        self.performRelativeBaseOperation(opcode: opcodeString)
+      case .endProgram:
+        self.onHalt?(self.output)
+        return
+      }
+    }
+  }
+
+  private func perform3ParamOperation(opcode: String, oper: (Int, Int) -> Int) {
+    var opcode = opcode
+    guard index + 3 < code.count else { fatalError("IntCodeError.operatorExceedsBounds") }
+
+    let lhValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let lhsIndex = code[index + 1]!
+      let val = code[lhsIndex, default: 0]
+      lhValue = val
+    case "1":
+      lhValue = code[index + 1]!
+    case "2":
+      let lhsIndex = code[index + 1]! + relativeBase
+      let val = code[lhsIndex, default: 0]
+      lhValue = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    let rhValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let rhsIndex = code[index + 2]!
+      let val = code[rhsIndex, default: 0]
+      rhValue = val
+    case "1":
+      rhValue = code[index + 2]!
+    case "2":
+      let rhsIndex = code[index + 2]! + relativeBase
+      let val = code[rhsIndex, default: 0]
+      rhValue = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    let resultIndex: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      resultIndex = code[index + 3]!
+    case "2":
+      resultIndex = code[index + 3]! + relativeBase
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // guard resultIndex < code.count else { throw IntCodeError.operatorRegisterExceedsBounds }
+
+    code[resultIndex] = oper(lhValue, rhValue)
+    index += 4
+
+    runNext()
+  }
+
+  private func performInputOperation(opcode: String) {
+    if inputs.isEmpty {
+      return // Pause
+    }
+
+    let input = inputs.removeFirst()
+    let inputIndex: Int
+
+    switch opcode.last ?? "0" {
+    case "0":
+      inputIndex = code[index + 1]!
+    case "2":
+      inputIndex = code[index + 1]! + relativeBase
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // print("input: \(input) -> \(inputIndex) (\(code[(code.count - 3)...]))")
+
+    code[inputIndex] = input
+    index += 2
+
+    runNext()
+  }
+
+  private func performOutputOperation(opcode: String) {
+    let value: Int
+    var outputIndex = index + 1
+
+    switch opcode.last ?? "0" {
+    case "0":
+      outputIndex = code[index + 1]!
+      let val = code[outputIndex, default: 0]
+      value = val
+    case "1":
+      value = code[index + 1]!
+    case "2":
+      outputIndex = code[index + 1]! + relativeBase
+      let val = code[outputIndex, default: 0]
+      value = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // print("output: \(value) <- \(outputIndex)")
+    output = value
+    outputReceiver?.handleValue(value)
+    index += 2
+
+    runNext()
+  }
+
+  private func performRelativeBaseOperation(opcode: String) {
+    let value: Int
+    var relativeBaseIndex = index + 1
+
+    switch opcode.last ?? "0" {
+    case "0":
+      relativeBaseIndex = code[index + 1]!
+      let val = code[relativeBaseIndex, default: 0]
+      value = val
+    case "1":
+      value = code[index + 1]!
+    case "2":
+      relativeBaseIndex = code[index + 1]! + relativeBase
+      let val = code[relativeBaseIndex, default: 0]
+      value = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // print("output: \(value) <- \(outputIndex)")
+    relativeBase += value
+    index += 2
+
+    runNext()
+  }
+
+  func performJumpOperation(opcode: String, condition: Bool) {
+    // print("jump")
+    var opcode = opcode
+    guard index + 2 < code.count else { fatalError("IntCodeError.operatorExceedsBounds") }
+
+    let testValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let testIndex = code[index + 1]!
+      let val = code[testIndex, default: 0]
+      testValue = val
+    case "1":
+      testValue = code[index + 1]!
+    case "2":
+      let testIndex = code[index + 1]! + relativeBase
+      let val = code[testIndex, default: 0]
+      testValue = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    let jumpValue: Int
+    switch opcode.popLast() ?? "0" {
+    case "0":
+      let jumpIndex = code[index + 2]!
+      let val = code[jumpIndex, default: 0]
+      jumpValue = val
+    case "1":
+      jumpValue = code[index + 2]!
+    case "2":
+      let jumpIndex = code[index + 2]! + relativeBase
+      let val = code[jumpIndex, default: 0]
+      jumpValue = val
+    default:
+      fatalError("IntCodeError.unexpectedOpcode")
+    }
+
+    // print("testValue: \(testValue), condition: \(condition), willJump: \((testValue != 0) == condition)")
+    if (testValue != 0) == condition {
+      // guard jumpValue < code.count, jumpValue >= 0 else { throw IntCodeError.operatorRegisterExceedsBounds }
+
+      index = jumpValue
+    } else {
+      index += 3
+    }
+
+    runNext()
+  }
+}
+
+enum InstructionType: Int {
+  case add = 1
+  case multiply = 2
+  case input = 3
+  case output = 4
+  case jumpIfTrue = 5
+  case jumpIfFalse = 6
+  case lessThan = 7
+  case equals = 8
+  case setRelativeBase = 9
+  case endProgram = 99
 }
 
 class File {
@@ -65,9 +411,33 @@ class File {
   }
 }
 
+extension String {
+  var intsSplitByComma: [Int] {
+    return split(separator: ",").compactMap { Int(String($0)) }
+  }
+  var indexDict: [Int: Int] {
+    let array = intsSplitByComma
+    var output: [Int: Int] = [:]
+    for (index, elem) in array.enumerated() {
+      output[index] = elem
+    }
+    return output
+  }
+}
+
+extension Array where Element == Int {
+  func prepare(noun: Int, verb: Int) -> [Int] {
+    var new = self
+    new[1] = noun
+    new[2] = verb
+    return new
+  }
+}
+
 let filename = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "input.txt"
 let part: Solution.Part = Solution.Part(rawValue: CommandLine.arguments.count > 1 ? Int(CommandLine.arguments[1])! : 1)!
 let solution = Solution(part: part, filename: filename)
 let result = solution.get()
 
 print(result)
+dispatchMain()
