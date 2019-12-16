@@ -28,12 +28,61 @@ class Solution {
     }
   }
 
+  let basePattern = [0, 1, 0, -1]
+
   private func solveOne(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.string)\nresult 1"
+    let input = file.lines[0].toInts
+
+    var currentSignal = input
+    var output: [Int] = Array(repeating: 0, count: input.count)
+
+    for i in 0..<100 {
+      // print(currentSignal.description)
+      for index in 0..<currentSignal.count {
+        var pattern: [Int] = []
+        for elem in basePattern {
+          pattern += Array(repeating: elem, count: index + 1)
+        }
+
+        var nextOutput = 0
+        for (intIdx, int) in currentSignal.enumerated() {
+          nextOutput += int * pattern[(intIdx + 1) % pattern.count]
+        }
+        output[index] = abs(nextOutput) % 10
+      }
+
+      currentSignal = output
+    }
+    return output.reduce("") { $0 + $1.description }
   }
 
   private func solveTwo(file: File) -> String {
-    return "input: \(file.filename)\ncontent:\n\(file.words)\nresult 2"
+    let input = file.lines[0].toInts
+    let offset = Int(input[..<7].reduce("") { $0 + $1.description })!
+    print(input)
+    print(offset)
+    var currentSignal = Array(repeating: input, count: 10_000).flatMap { $0 }
+    var output: [Int] = Array(repeating: 0, count: currentSignal.count)
+
+    for i in 0..<100 {
+      print(i)
+      // print(currentSignal.description)
+      for index in 0..<currentSignal.count {
+        var pattern: [Int] = []
+        for elem in basePattern {
+          pattern += Array(repeating: elem, count: index + 1)
+        }
+
+        var nextOutput = 0
+        for (intIdx, int) in currentSignal.enumerated() {
+          nextOutput += int * pattern[(intIdx + 1) % pattern.count]
+        }
+        output[index] = abs(nextOutput) % 10
+      }
+
+      currentSignal = output
+    }
+    return output[offset...(offset + 8)].reduce("") { $0 + $1.description }
   }
 }
 
@@ -62,6 +111,12 @@ class File {
 
   init(filename: String) {
     self.filename = filename
+  }
+}
+
+extension String {
+  var toInts: [Int] {
+    return map { Int(String($0))! }
   }
 }
 
