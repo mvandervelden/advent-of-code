@@ -52,9 +52,9 @@ class Solution {
     let minX = ([position.x] + grid.values.flatMap { $0.keys }).min()!
     let maxX = ([position.x] + grid.values.flatMap { $0.keys }).max()!
     // print("(\(minX),\(minY)),(\(maxX),\(maxY))")
-    for y in minX...maxY {
-      for x in maxX...maxX {
-        if y == positiony && x == position.x {
+    for y in minY...maxY {
+      for x in minX...maxX {
+        if y == position.y && x == position.x {
           print("D", terminator: "")
         } else if let val = grid[y]?[x] {
           print(val, terminator: "")
@@ -91,9 +91,50 @@ extension Solution: IntCodeOutputReceiver {
   func handleValue(_ value: Int) {
     switch value {
     case 0:
-
+      switch currentInstruction {
+      case 1:
+        grid[position.y - 1, default: [:]][position.x] = "#"
+      case 2:
+        grid[position.y + 1, default: [:]][position.x] = "#"
+      case 3:
+        grid[position.y, default: [:]][position.x - 1] = "#"
+      case 4:
+        grid[position.y, default: [:]][position.x + 1] = "#"
+      default:
+        fatalError("unexpected instruction: \(currentInstruction)")
+      }
+      currentInstruction = currentInstruction == 4 ? 1 : (currentInstruction + 1)
+      program.handleValue(currentInstruction)
+    case 1:
+      switch currentInstruction {
+      case 1:
+        position = (x: position.x, y: position.y - 1)
+      case 2:
+        position = (x: position.x, y: position.y + 1)
+      case 3:
+        position = (x: position.x - 1, y: position.y)
+      case 4:
+        position = (x: position.x + 1, y: position.y)
+      default:
+        fatalError("unexpected instruction: \(currentInstruction)")
+      }
+      program.handleValue(currentInstruction)
+    case 2:
+    switch currentInstruction {
+      case 1:
+        position = (x: position.x, y: position.y - 1)
+      case 2:
+        position = (x: position.x, y: position.y + 1)
+      case 3:
+        position = (x: position.x - 1, y: position.y)
+      case 4:
+        position = (x: position.x + 1, y: position.y)
+      default:
+        fatalError("unexpected instruction: \(currentInstruction)")
+      }
+      print("FOUND THE THING: \(position)")
     default:
-      fatalError("unexpected print position: \(currentPrintPosition)")
+      fatalError("unexpected output value: \(value)")
     }
   }
 }

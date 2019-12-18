@@ -53,40 +53,51 @@ class Solution {
   }
 
   private func solveTwo(file: File) -> String {
-let locations = file.lines.map(Point.init)
+    let locations = file.lines.map(Point.init)
     let velocities = Array(repeating: Point(x: 0, y: 0, z: 0), count: 4)
     planets = zip(locations, velocities).map(Planet.init)
 
-    let initialState = planets
-    print("test equals \(initialState == planets)")
-    doStep()
+    let stepsTotal = 10
 
-    var iterations = 1
-    var cycles: [Int] = [0, 0, 0, 0]
-    var foundCycle = [false, false, false, false]
-
-    while foundCycle != [true, true, true, true] {
-      // for planet in planets {
-      //   print(planet)
-      // }
-      // print("")
-      doStep()
-      iterations += 1
-      for i in 0..<4 {
-        let planet = planets[i]
-        if planet == initialState[i] {
-          foundCycle[i] = true
-          cycles[i] = iterations
-          print("found cycle for moon \(i): \(iterations)")
-        }
+    for _ in 0..<stepsTotal {
+      printPlanets(planets)
+      for planet in planets {
+        print(planet)
       }
+      print("")
+      doStep()
     }
 
-    // for planet in planets {
-    //   print(planet)
-    // }
+    for planet in planets {
+      print(planet)
+    }
+    let total = planets.map { $0.energy }.reduce(0, +)
+    return "total: \(total)"
+  }
 
-    return "total: \(cycles)" }
+  private func printPlanets(_ planets: [Planet]) {
+    let minX = ([0] + planets.map { $0.location.x }).min()!
+    let maxX = ([0] + planets.map { $0.location.x }).max()!
+    let minY = ([0] + planets.map { $0.location.y }).min()!
+    let maxY = ([0] + planets.map { $0.location.y }).max()!
+
+    var grid: [Int: [Int: String]] = [:]
+
+    grid[0, default:[:]][0] = "+"
+
+
+    for (index, planet) in planets.enumerated() {
+      grid[planet.location.y, default: [:]][planet.location.x] = planet.location.z.description
+    }
+
+
+    for y in minY...maxY {
+      for x in minX...maxX {
+        print((grid[y]?[x] ?? "."), terminator: "")
+      }
+      print("")
+    }
+  }
 
   private func doStep() {
     for i in 0..<4 {
