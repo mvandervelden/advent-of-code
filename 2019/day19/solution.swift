@@ -33,13 +33,72 @@ class Solution {
     let line = lines[0]
     code = line.indexDict
     position = (x: 0, y: 0)
-    grid = Array(repeating: Array(repeating: 0, count: 50), count: 50)
+    grid = Array(repeating: Array(repeating: 0, count: 100), count: 100)
     runInput()
-    return "TODO"
+    return "finished"
   }
 
   private func solveTwo(file: File) -> String {
-    return "TODO"
+    // let baseY = 40
+    // let baseLowerBoundX = 46
+    // let baseUpperBoundX = 54
+    // let lowerMultiplier = 8
+    // let upperMultiplier = 3
+
+    // 8 = 54 - 46
+    // var currentY
+    // var currentOffset = currentY - baseY
+    // var currentLowerBoundX = currentOffset + baseLowerBoundX + currentOffset / lowerMultiplier
+    // var currentUpperBoundX = currentOffset + baseUpperBoundX + currentOffset / upperMultiplier
+    // let width = currentUpperBoundX - currentUpperBoundX
+    // 100 = currentOffset + baseUpperBoundX + (currentOffset / upperMultiplier) - (currentOffset + baseLowerBoundX + (currentOffset / lowerMultiplier))
+    // 100 = baseUpperBoundX - baseLowerBoundX + (currentOffset / upperMultiplier) - (currentOffset / lowerMultiplier)
+    // 100 = 54 - 46 + ((currentY - 40)/3) - ((currentY - 40)/8)
+    // 92 = ((currentY - 40)/3) - ((currentY - 40)/8)
+    // 92 = currentY/3 - 13,3333333333 - currentY/8 + 5
+    // 100,3333333333 = currentY/3 - currentY/8
+    // 2.408 = currentY*8 - currentY*3
+    // 481,6 = currentY
+    // 4.816*w = currentY
+
+    let lines = file.lines
+    let line = lines[0]
+    code = line.indexDict
+
+    let group = DispatchGroup()
+    let minY = 1056
+    let maxY = 1156
+    let minX = 1301
+    let maxX = 1401
+    // This is the lowest I could find: 13021056!
+    grid = Array(repeating: Array(repeating: 0, count: maxX - minX), count: maxY - minY)
+    for y in minY..<maxY {
+      for x in minX..<maxX {
+        program = IntCode(code: code)
+        program.inputs = [x, y]
+        group.enter()
+        program.run { output in
+          self.grid[y - minY][x - minX] = output!
+          group.leave()
+        }
+      }
+    }
+
+    group.notify(queue: DispatchQueue.main) {
+      for y in 0..<self.grid.count {
+        let line = self.grid[y]
+        let minidx = line.firstIndex { $0 == 1 } ?? -minX
+        let maxidx = line.lastIndex { $0 == 1 } ?? -minX
+        print("y: \(y + minY), x range: \(minidx + minX)-\(maxidx + minX), count: \(maxidx - minidx)")
+      }
+
+      self.printGrid()
+      let amounts = self.grid.reduce(0) { $0 + $1.reduce(0, +) }
+      print("amounts pulled: ", amounts)
+      exit(EXIT_SUCCESS)
+    }
+
+    return "13021056"
   }
 
   var code: [Int: Int] = [:]
@@ -49,7 +108,6 @@ class Solution {
   var program: IntCode!
 
   private func printGrid() {
-    // print("(\(minX),\(minY)),(\(maxX),\(maxY))")
     for line in grid {
       for elem in line {
         print(elem == 1 ? "#" : ".", terminator: "")
@@ -60,8 +118,8 @@ class Solution {
 
   private func runInput() {
     let group = DispatchGroup()
-    for x in 0..<50 {
-      for y in 0..<50 {
+    for x in 0..<100 {
+      for y in 0..<100 {
         program = IntCode(code: code)
         program.inputs = [x, y]
         group.enter()
@@ -83,20 +141,6 @@ class Solution {
 
 extension Solution: IntCodeOutputReceiver {
   func handleValue(_ value: Int) {
-    // grid[position.y][position.x] = value
-    // if position.x < 49 {
-    //   position = (x: position.x + 1, y: position.y)
-    // } else if position.y < 49 {
-    //   position = (x: 0, y: position.y + 1)
-    // } else {
-    //   print("FINISHED")
-    //   printGrid()
-    //   let amount = grid.reduce(0) { $0 + $1.reduce(0, +) }
-    //   print("amount of pulled: ", amount)
-    //   return
-    // }
-    // program.inputs.append(position.x)
-    // program.inputs.append(position.y)
   }
 }
 
