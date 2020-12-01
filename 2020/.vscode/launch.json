@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "swiftc with debug",
+            "name": "Input Part 1",
+            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${fileDirname}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "swiftc with debug",
+            "name": "Input Part 2",
+            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+            "args": ["2"],
+            "cwd": "${fileDirname}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "swiftc with debug",
+            "name": "Sample Part 1",
+            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+            "args": ["1", "example.1.txt"],
+            "cwd": "${fileDirname}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "swiftc with debug",
+            "name": "Sample Part 2",
+            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+            "args": ["2", "example.1.txt"],
+            "cwd": "${fileDirname}"
+        },
+    ]
+}
