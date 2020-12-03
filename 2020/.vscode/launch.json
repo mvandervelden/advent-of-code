@@ -4,38 +4,11 @@
         {
             "type": "lldb",
             "request": "launch",
-            "preLaunchTask": "swiftc with debug",
-            "name": "Input Part 1",
-            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-            "args": [],
-            "cwd": "${fileDirname}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "preLaunchTask": "swiftc with debug",
-            "name": "Input Part 2",
-            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-            "args": ["2"],
-            "cwd": "${fileDirname}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "preLaunchTask": "swiftc with debug",
-            "name": "Sample Part 1",
-            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-            "args": ["1", "example.1.txt"],
-            "cwd": "${fileDirname}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "preLaunchTask": "swiftc with debug",
-            "name": "Sample Part 2",
-            "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-            "args": ["2", "example.1.txt"],
-            "cwd": "${fileDirname}"
-        },
+            "preLaunchTask": "swift build",
+            "name": "Input 1 day 1",
+            "program": ".build/debug/aoc",
+            "args": [1, 1],
+            "cwd": "${workspaceFolder}"
+        }
     ]
 }

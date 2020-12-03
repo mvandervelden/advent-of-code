@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "swiftc with debug",
+            "label": "swift build",
             "type": "shell",
-            "command": "swiftc -g ${file} -o ${fileDirname}/build/${fileBasenameNoExtension}",
+            "command": "swift build",
             "group": {
                 "kind": "build",
                 "isDefault": true
