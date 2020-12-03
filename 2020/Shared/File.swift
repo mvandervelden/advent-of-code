@@ -23,6 +23,10 @@ class File {
     return lines.map { $0.split(separator: " ").map(String.init) }
   }()
 
+  lazy var charsByLine: [[Character]] = {
+    return lines.map { Array($0) }
+  }()
+
   init(filename: String) {
     self.filename = filename
   }

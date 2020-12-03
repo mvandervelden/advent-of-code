@@ -19,8 +19,6 @@ struct Rule: CustomStringConvertible {
   }
 }
 
-
-
 struct Entry: CustomStringConvertible {
   let rule: Rule
   let pwd: String
