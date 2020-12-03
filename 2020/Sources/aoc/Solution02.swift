@@ -1,8 +1,3 @@
-// Running:
-// $ ./run.sh part [inputfilename]
-// part: either `1` or `2`
-// If no inputfilename provided, it takes "input.txt"
-
 struct Rule: CustomStringConvertible {
   let letter: Character
   let lowerRange: Int
