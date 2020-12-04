@@ -13,11 +13,11 @@ struct AOC: ParsableCommand {
     @Argument(help: "Day (1-25)")
     private var day: Int
 
-    @Argument(default: 1, help: "Part (1-2)")
-    private var part: Int
+    @Argument(help: "Part (1-2)")
+    private var part: Int = 1
 
-    @Argument(default: "input.txt", help: "input filename")
-    private var inputFileName: String
+    @Argument(help: "input filename")
+    private var inputFileName: String = "input.txt"
 
     func run() throws {
         print("Running with day \(day), part \(part), input \(inputFileName)")

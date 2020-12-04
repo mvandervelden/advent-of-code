@@ -33,6 +33,23 @@ class File {
     return lines.map { Array($0) }
   }()
 
+  lazy var wordsSplitByEmptyLine: Words = {
+    let blocks = string.components(separatedBy: "\n\n")
+
+    return string.components(separatedBy: "\n\n").map { (block: String) in
+      let lines: [String.SubSequence] = block.split(separator: "\n")
+
+      var words: [String] = []
+      for line in lines {
+        let wordsInLine = line.split(separator: " ")
+        for word in wordsInLine {
+          words.append(String(word))
+        }
+      }
+      return words
+    }
+  }()
+
   init(day: Int, filename: String) {
     self.filename = filename
     self.day = day
