@@ -1,3 +1,13 @@
+enum PassportField: String, CaseIterable {
+  case ecl
+  case pid
+  case eyr
+  case hcl
+  case byr
+  case iyr
+  case hgt
+  // case cid // optional, ignored
+}
 
 class Solution04: Solving {
   let file: File
@@ -12,8 +22,8 @@ class Solution04: Solving {
     var invalids = 0
 
     for ppt in passportStrings {
-      for param in ["ecl", "pid", "eyr", "hcl", "byr", "iyr", "hgt"] {
-        guard ppt.first(where: { $0.hasPrefix(param) }) != nil else {
+      for param in PassportField.allCases {
+        guard ppt.first(where: { $0.hasPrefix(param.rawValue) }) != nil else {
           invalids += 1
           break
         }
@@ -28,8 +38,8 @@ class Solution04: Solving {
     var invalids = 0
 
     for ppt in passportStrings {
-      for param in ["ecl", "pid", "eyr", "hcl", "byr", "iyr", "hgt"] {
-        guard let val = ppt.first(where: { $0.hasPrefix(param) })?.split(separator: ":").last else {
+      for param in PassportField.allCases {
+        guard let val = ppt.first(where: { $0.hasPrefix(param.rawValue) })?.split(separator: ":").last else {
           invalids += 1
           break
         }
@@ -37,22 +47,22 @@ class Solution04: Solving {
         var foundInvalid = false
 
         switch param {
-        case "byr":
+        case .byr:
           guard let intVal = Int(val), intVal >= 1920, intVal <= 2002 else {
             foundInvalid = true
             break
           }
-        case "iyr":
+        case .iyr:
           guard let intVal = Int(val), intVal >= 2010, intVal <= 2020 else {
             foundInvalid = true
             break
           }
-        case "eyr":
+        case .eyr:
           guard let intVal = Int(val), intVal >= 2020, intVal <= 2030 else {
             foundInvalid = true
             break
           }
-        case "hgt":
+        case .hgt:
           switch val.count {
           case 4: // in
             guard val.hasSuffix("in"), let intVal = Int(val.prefix(2)), intVal >= 59, intVal <= 76 else {
@@ -68,7 +78,7 @@ class Solution04: Solving {
             foundInvalid = true
             break
           }
-          case "hcl":
+          case .hcl:
             guard let first = val.first, first == "#" else { foundInvalid = true; break }
             let vals = Array(val.dropFirst())
 
@@ -76,12 +86,10 @@ class Solution04: Solving {
 
             let isValid = vals.reduce(true) { $0 && $1.isHexDigit }
             if !isValid { foundInvalid = true; break }
-          case "ecl":
+          case .ecl:
             guard ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(val) else { foundInvalid = true; break }
-          case "pid":
+          case .pid:
             guard val.count == 9, Int(val) != nil else { foundInvalid = true; break }
-          default:
-            preconditionFailure("should not happen")
         }
         if foundInvalid {
           invalids += 1
