@@ -15,14 +15,7 @@ class Solution05: Solving {
   }
 
   func getSeatIDBin(line: [Character]) -> Int {
-    let lineBin = line.map { (char: Character) -> Character in
-      switch char {
-        case "F", "L": return "0"
-        case "B", "R": return "1"
-        default: preconditionFailure("unexpected character: \(char)")
-      }
-    }
-
-    return Int(String(lineBin), radix: 2)!
+    let conversions: [Character: Character] = ["F": "0", "B": "1", "L": "0", "R": "1"]
+    return Int(String(line.map { conversions[$0]! }), radix: 2)!
   }
 }
