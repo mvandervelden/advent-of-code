@@ -13,23 +13,22 @@ class Solution08: Solving {
     let originalCode = file.words
 
     for (index, line) in originalCode.enumerated() {
-      switch line[0] {
-      case "jmp":
-        let newLine = ["nop", line[1]]
-        var newInstructions = originalCode
-        newInstructions[index] = newLine
-        let (result, exit) = CodeRunner(instructions: newInstructions).run()
-        if exit == .endReached { return result.description }
-      case "nop":
-        let newLine = ["jmp", line[1]]
-        var newInstructions = originalCode
-        newInstructions[index] = newLine
-        let (result, exit) = CodeRunner(instructions: newInstructions).run()
-        if exit == .endReached { return result.description }
-      default: continue
-      }
+      var newInstructions = originalCode
+      newInstructions[index] = [changeInstr(line[0]), line[1]]
+
+      let (result, exit) = CodeRunner(instructions: newInstructions).run()
+
+      if exit == .endReached { return result.description }
     }
-    return "nothinig found"
+    return "nothing found"
+  }
+
+  func changeInstr(_ instr: String) -> String {
+    switch instr {
+    case "nop": return "jmp"
+    case "jmp": return "nop"
+    default: return instr
+    }
   }
 }
 
@@ -64,8 +63,6 @@ class CodeRunner {
       default:
         preconditionFailure("unexpected code: \(next)")
       }
-
-      // print("\(next): \(index) | \(accumulator) (\(history))")
     }
 
     return (accumulator, .loopDetected)
