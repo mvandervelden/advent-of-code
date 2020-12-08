@@ -12,7 +12,7 @@ class Solution07: Solving {
 
     var containers: Set<String> = []
     var openSearchTerms: Set<String> = ["shiny gold bag"]
-    var  searchedTerms: Set<String> = []
+    var searchedTerms: Set<String> = []
     while !openSearchTerms.isEmpty {
       let searchTerm = openSearchTerms.popFirst()!
       for rule in ruleDict {
