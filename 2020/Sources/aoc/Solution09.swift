@@ -22,9 +22,7 @@ class Solution09: Solving {
         let range = vals[lowerBound...upperBound]
 
         if range.sum() == invalidVal {
-          let lowerVal = vals[lowerBound...upperBound].min()!
-          let upperVal = vals[lowerBound...upperBound].max()!
-          result = lowerVal + upperVal
+          result = range.min()! + range.max()!
           break
         } else if range.sum() > invalidVal {
           break
