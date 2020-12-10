@@ -21,19 +21,24 @@ class Solution10: Solving {
   func solve2() -> String {
     var adapters = file.lines.map { Int($0)! }.sorted()
     adapters.append(adapters.last! + 3)
-    // let paths = search(joltage: 0, remaining: adapters) ->
     let paths2 = search2(remaining: [0] + adapters)
-    return paths2.description
+    let paths = search(joltage: 0, remaining: adapters)
+    return paths.description + " " + paths2.description
   }
 
 
   // Recursion, doesn't work on the input
+  var cache: [[Int]: Int] = [[]: 1]
+
   func search(joltage: Int, remaining: [Int]) -> Int {
-    if remaining.isEmpty { return 1 }
+    if let val = cache[remaining] { return val }
 
     var pathsFound = 0
     for (ind, i) in remaining.enumerated() where i <= joltage + 3 {
-      pathsFound += search(joltage: i, remaining: Array(remaining[(ind + 1)...]))
+      let newRemaining = Array(remaining[(ind + 1)...])
+      let result = search(joltage: i, remaining: newRemaining)
+      pathsFound += result
+      cache[newRemaining] = result
     }
     return pathsFound
   }
