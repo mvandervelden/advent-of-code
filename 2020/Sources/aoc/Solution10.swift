@@ -27,7 +27,7 @@ class Solution10: Solving {
   }
 
 
-  // Recursion, doesn't work on the input
+  // Cached recursion, also works
   var cache: [[Int]: Int] = [[]: 1]
 
   func search(joltage: Int, remaining: [Int]) -> Int {
