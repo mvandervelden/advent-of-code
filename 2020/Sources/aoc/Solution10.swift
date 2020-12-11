@@ -21,16 +21,21 @@ class Solution10: Solving {
   func solve2() -> String {
     var adapters = file.lines.map { Int($0)! }.sorted()
     adapters.append(adapters.last! + 3)
-    let paths2 = search2(remaining: [0] + adapters)
     let paths = search(joltage: 0, remaining: adapters)
+    let paths2 = search2(remaining: [0] + adapters)
+    print("Iterations for solution 1: \(timesCalled1)")
+    print("Iterations for solution 2: \(timesCalled2)")
     return paths.description + " " + paths2.description
   }
 
+  var timesCalled1 = 0
+  var timesCalled2 = 0
 
   // Cached recursion, also works
   var cache: [[Int]: Int] = [[]: 1]
 
   func search(joltage: Int, remaining: [Int]) -> Int {
+    timesCalled1 += 1
     if let val = cache[remaining] { return val }
 
     var pathsFound = 0
@@ -49,6 +54,7 @@ class Solution10: Solving {
 
     var openPaths: [Int: Int] = [0: 1]
     for (ind, i) in (remaining).enumerated() {
+      timesCalled2 += 1
       if ind == n { break }
 
       let curCount = openPaths[ind]!
