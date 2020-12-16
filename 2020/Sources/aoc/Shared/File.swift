@@ -33,9 +33,13 @@ class File {
     return lines.map { Array($0) }
   }()
 
-  lazy var wordsSplitByEmptyLine: Words = {
-    let blocks = string.components(separatedBy: "\n\n")
+lazy var linesSplitByEmptyLine: [Lines] = {
+    return string.components(separatedBy: "\n\n").map { (block: String) in
+      block.split(separator: "\n").map(String.init)
+    }
+  }()
 
+  lazy var wordsSplitByEmptyLine: Words = {
     return string.components(separatedBy: "\n\n").map { (block: String) in
       let lines: [String.SubSequence] = block.split(separator: "\n")
 
