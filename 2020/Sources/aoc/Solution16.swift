@@ -48,7 +48,10 @@ class Solution16: Solving {
   }
 
   func solve2() -> String {
+    // Filtering out the invalid tickets (loosely based on part 1)
     let valids = validTickets()
+
+    // For each item on the tickets, get the possible rules that match all valid tickets
     var potRulesPerSlot: [[Rule]] = []
     for i in 0..<valids[0].count {
       var potentialRules = rules
@@ -68,7 +71,14 @@ class Solution16: Solving {
       potRulesPerSlot.append(potentialRules)
     }
 
+    // sort the possible rules per slot by amount of options,
+    // so if for the first ticket item can be both "class" and "row", and the second item only "row",
+    // then sort item 1 first. This makes iteration easier.
     var sorted = potRulesPerSlot.enumerated().sorted { $0.element.count < $1.element.count }
+
+    // Loop over the sorted ticket item possibilities, pick the only option left,
+    // and remove this option from the remainder of ticket item options
+    // This leaves exactly 1 option for each ticket item
     for i in 0..<sorted.count {
       let rules = sorted[i].element
       if rules.count != 1 { preconditionFailure("should be 1 option left, got: \(rules)")}
@@ -77,8 +87,12 @@ class Solution16: Solving {
         return (offset: rules.offset, element: rules.element.filter { $0.name != currentRuleName })
       }
     }
+
+    // Sort the remaining ticket items back according to their original index, and keep the names only
     let reSortedNames = sorted.sorted { $0.offset < $1.offset }.map { $0.element[0].name }
 
+    // match the values on your ticket with the names, only take the names containing "departure",
+    // and calculate the product of these values
     let result = zip(reSortedNames, yourTicket)
       .filter { $0.0.contains("departure") }.reduce(1) { $0 * $1.1 }
 
