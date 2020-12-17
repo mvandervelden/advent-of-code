@@ -101,7 +101,7 @@ class Solution17: Solving {
 
     func printState(_ state: State) {
       for z in zRange {
-        print("z=\(z)")
+        print("z=\(z) (xmin=\(xRange.first!), ymin=\(yRange.first!)")
         for y in yRange {
           for x in xRange {
             print(state[z]?[y]?[x] ?? ".", terminator: "")
@@ -115,98 +115,98 @@ class Solution17: Solving {
   }
 
   class Part2 {
-    typealias State = [Int: [Int: [Int: [Int: Character]]]]
+    struct Point: Hashable {
+      let x, y, z, w: Int
+    }
+
+    typealias State = Set<Point>
+    typealias Range = ClosedRange<Int>
 
     let file: File
-    var state: State = [:]
-    var previous: State = [:]
+    var state: State = []
+    var previous: State = []
 
-    var wRange: ClosedRange<Int> {
-      state.keys.min()!...state.keys.max()!
+    func getRanges() -> (wRange: Range, zRange: Range, yRange: Range, xRange: Range) {
+      var wRange = (Int.max, Int.min)
+      var zRange = (Int.max, Int.min)
+      var yRange = (Int.max, Int.min)
+      var xRange = (Int.max, Int.min)
+
+      for point in state {
+        if point.w < wRange.0 { wRange = (point.w, wRange.1) }
+        if point.w > wRange.1 { wRange = (wRange.0, point.w) }
+        if point.z < zRange.0 { zRange = (point.z, zRange.1) }
+        if point.z > zRange.1 { zRange = (zRange.0, point.z) }
+        if point.y < yRange.0 { yRange = (point.y, yRange.1) }
+        if point.y > yRange.1 { yRange = (yRange.0, point.y) }
+        if point.x < xRange.0 { xRange = (point.x, xRange.1) }
+        if point.x > xRange.1 { xRange = (xRange.0, point.x) }
+      }
+
+      return (wRange.0...wRange.1, zRange.0...zRange.1, yRange.0...yRange.1, xRange.0...xRange.1)
     }
 
-    var zRange: ClosedRange<Int> {
-      let zs = state.values.flatMap { $0.keys }
-      return zs.min()!...zs.max()!
-    }
-
-    var yRange: ClosedRange<Int> {
-      let ys = state.values.flatMap { $0.values.flatMap { $0.keys } }
-      return ys.min()!...ys.max()!
-    }
-
-    var xRange: ClosedRange<Int> {
-      let xs = state.values.flatMap { $0.values.flatMap { $0.values.flatMap { $0.keys } } }
-      return xs.min()!...xs.max()!
-    }
-
-    var wPlusRange: ClosedRange<Int> {
-      let range = wRange
-      return (range.first! - 1)...(range.last! + 1)
-    }
-
-    var zPlusRange: ClosedRange<Int> {
-      let range = zRange
-      return (range.first! - 1)...(range.last! + 1)
-    }
-
-    var yPlusRange: ClosedRange<Int> {
-      let range = yRange
-      return (range.first! - 1)...(range.last! + 1)
-    }
-
-    var xPlusRange: ClosedRange<Int> {
-      let range = xRange
+    func plusRange(_ range: Range) -> Range {
       return (range.first! - 1)...(range.last! + 1)
     }
 
     required init(file: File) {
       self.file = file
       let initialState = file.charsByLine
-      state[0] = [:]
-      state[0]![0] = [:]
+
       for (y, line) in initialState.enumerated() {
-        state[0]![0]![y] = [:]
         for (x, item) in line.enumerated() {
-          state[0]![0]![y]![x] = item
+          if item == "#" {
+            state.insert(Point(x: x, y: y, z: 0, w: 0))
+          }
         }
       }
     }
 
+    var curWRange: Range = 0...0
+    var curZRange: Range = 0...0
+    var curYRange: Range = 0...0
+    var curXRange: Range = 0...0
+
     func solve(iterations: Int) -> String {
       for _ in 0..<iterations {
         previous = state
-
-        for w in wPlusRange {
-          for z in zPlusRange {
-            for y in yPlusRange {
-              for x in xPlusRange {
-                switch previous[w]?[z]?[y]?[x] {
-                case "#":
-                  let actives = lookupAdjacent(x: x, y: y, z: z, w: w)
+        let ranges = getRanges()
+        curWRange = ranges.wRange
+        curZRange = ranges.zRange
+        curYRange = ranges.yRange
+        curXRange = ranges.xRange
+        let curWPlusRange = plusRange(curWRange)
+        let curZPlusRange = plusRange(curZRange)
+        let curYPlusRange = plusRange(curYRange)
+        let curXPlusRange = plusRange(curXRange)
+        for w in curWPlusRange {
+          for z in curZPlusRange {
+            for y in curYPlusRange {
+              for x in curXPlusRange {
+                let point = Point(x: x, y: y, z: z, w: w)
+                if previous.contains(point) {
+                  let actives = lookupAdjacent(point)
                   if !(actives == 3 || actives == 4) {
-                    // if z == 0 { print("toggling (\(x),\(y),\(z)) (prev: \(previous[z]?[y]?[x] ?? "_")) to . (actives: \(actives))") }
-                    state[w]![z]![y]![x] = "."
+                    state.remove(point)
                   }
-                case ".", .none:
-                  let actives = lookupAdjacent(x: x, y: y, z: z, w: w)
+                } else {
+                  let actives = lookupAdjacent(point)
                   if actives == 3 {
-                    // if z == 0 { print("toggling (\(x),\(y),\(z)) (prev: \(previous[z]?[y]?[x] ?? "_")) to #") }
-                    state[w, default: [:]][z, default: [:]][y, default: [:]][x] = "#"
+                    state.insert(point)
                   }
-                default: continue
                 }
               }
             }
           }
         }
-        printState(state)
       }
-      let occupiedCount = wRange.reduce(0) { (wSum: Int, w: Int) -> Int in
-        return wSum + zRange.reduce(0) { (zSum: Int, z: Int) -> Int in
-          return zSum + yRange.reduce(0) { (ySum: Int, y: Int) -> Int in
-            return ySum + xRange.reduce(0) { (xSum: Int, x: Int) -> Int in
-              return xSum + ((state[w]?[z]?[y]?[x] ?? "." == "#") ? 1 : 0)
+      let finalRanges = getRanges()
+      let occupiedCount = finalRanges.wRange.reduce(0) { (wSum: Int, w: Int) -> Int in
+        return wSum + finalRanges.zRange.reduce(0) { (zSum: Int, z: Int) -> Int in
+          return zSum + finalRanges.yRange.reduce(0) { (ySum: Int, y: Int) -> Int in
+            return ySum + finalRanges.xRange.reduce(0) { (xSum: Int, x: Int) -> Int in
+              return xSum + (state.contains(Point(x:x,y:y,z:z,w:w)) ? 1 : 0)
             }
           }
         }
@@ -214,14 +214,14 @@ class Solution17: Solving {
       return occupiedCount.description
     }
 
-    func lookupAdjacent(x: Int, y: Int, z: Int, w: Int) -> Int {
+    func lookupAdjacent(_ pt: Point) -> Int {
       var active = 0
-      for ww in (w - 1)...(w + 1) {
-        for zz in (z - 1)...(z + 1) {
-          for yy in (y - 1)...(y + 1) {
-            for xx in (x - 1)...(x + 1) {
-              let item = previous[ww]?[zz]?[yy]?[xx]
-              if item == "#" {
+      for ww in (pt.w - 1)...(pt.w + 1) {
+        for zz in (pt.z - 1)...(pt.z + 1) {
+          for yy in (pt.y - 1)...(pt.y + 1) {
+            for xx in (pt.x - 1)...(pt.x + 1) {
+              let point = Point(x: xx, y: yy, z: zz, w: ww)
+              if previous.contains(point) {
                 active += 1
               }
             }
@@ -232,12 +232,12 @@ class Solution17: Solving {
     }
 
     func printState(_ state: State) {
-      for w in wRange {
-        for z in zRange {
+      for w in curWRange {
+        for z in curZRange {
           print("z=\(z) w=\(w)")
-          for y in yRange {
-            for x in xRange {
-              print(state[w]?[z]?[y]?[x] ?? ".", terminator: "")
+          for y in curYRange {
+            for x in curXRange {
+              print(state.contains(Point(x:x,y:y,z:z,w:w)) ? "#" : ".", terminator: "")
             }
             print()
           }
