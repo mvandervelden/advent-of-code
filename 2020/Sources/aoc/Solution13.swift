@@ -40,7 +40,7 @@ class Solution13: Solving {
 
     var remainder: Int {
       if index == 0 { return 0 }
-      var rem = id - index
+      let rem = id - index
       // while rem < 0 { rem += id }
       return rem
     }

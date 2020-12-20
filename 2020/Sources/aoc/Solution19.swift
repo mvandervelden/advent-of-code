@@ -1,102 +1,86 @@
 class Solution19: Solving {
-  class Rule: CustomStringConvertible {
-    let index: String
-    var options: Set<[String]>
-
-    init(_ line: String) {
-      let splitIndex = line.components(separatedBy: ": ")
-      index = splitIndex[0]
-      let optionsArray = splitIndex[1]
-        .components(separatedBy: " | ")
-        .map { (optionString: String) -> [String] in
-          let option = optionString.components(separatedBy: " ")
-          return option.map { $0.replacingOccurrences(of: "\"", with: "") }
-        }
-      options = Set(optionsArray)
-    }
-
-    var description: String {
-      let optionsString = options.map { $0.map { String($0) }.joined(separator: " ") }.joined(separator: " | ")
-      return "\(index): \(optionsString)"
-    }
-
-    var isDetermined: Bool {
-      options.reduce(true) {
-        $0 && $1.reduce(true) {
-          $0 && Int($1) == nil
-        }
-      }
-    }
-
-    func replace(_ rule: Rule) {
-      guard options.contains(where: { $0.contains(rule.index) } ) else { return }
-
-      var newOptions: Set<[String]> = []
-
-      for option in options {
-        guard option.contains(rule.index) else { newOptions.insert(option); continue }
-
-        for ruleOption in rule.options {
-          var newOption: [String] = []
-
-          for idx in option.indices {
-            if option[idx] == rule.index {
-              newOption.append(contentsOf: ruleOption)
-            } else {
-              newOption.append(option[idx])
-            }
-          }
-          newOptions.insert(newOption)
-        }
-      }
-
-      options = newOptions
-    }
-
-    lazy var stringed: Set<String> = { Set(options.map { $0.joined() }) }()
-
-    func matches(_ input: String) -> Bool {
-      stringed.contains(input)
-    }
-  }
-
+  let indices: [String]
+  let rules: [[String]]
   let file: File
-  let input: Lines
-  let rules: [Rule]
+  let input: [[String]]
 
-  var rulesDescription: String { rules.map { $0.description }.joined(separator: "\n") }
+  var rulesDescription: String { zip(indices, rules).map { "\($0.0): \($0.1)" }.joined(separator: "\n") }
 
   required init(file: File) {
     self.file = file
     let sections = file.linesSplitByEmptyLine
-    rules = sections[0].map(Rule.init).sorted { $0.index < $1.index }
-    input = sections[1]
+    var rules: [[String]] = []
+    var indices: [String] = []
+    for line in sections[0] {
+      let splitIndex = line.components(separatedBy: ": ")
+      indices.append(splitIndex[0])
+      rules.append(splitIndex[1].components(separatedBy: " "))
+    }
+    self.rules = rules
+    self.indices = indices
+
+    input = sections[1].map { line in
+      line.map { "\"\($0)\"" }
+    }
   }
 
   func solve1() -> String {
-    var determineds: Set<String> = []
-    var i = 0
-    while !rules[0].isDetermined {
-      // print(rulesDescription)
-      // print()
-      let ruleToEval = rules.first { !determineds.contains($0.index) && $0.isDetermined }!
-      print(i, "rule:", ruleToEval.description)
-      i += 1
-
-      for rule in rules where !rule.isDetermined {
-        if i > 130 { print("evaling rule: ", rule)}
-        rule.replace(ruleToEval)
-      }
-      determineds.insert(ruleToEval.index)
+    var valids = 0
+    for line in input {
+      let v = isValid(line)
+      print(v, line.joined(separator: " "))
+      valids += v ? 1 : 0
     }
+    return valids.description
+  }
 
-    // print(rulesDescription)
-    // print()
-    print("Getting result")
-    let finalRule = rules[0]
-    return input.reduce(0) {
-      $0 + (finalRule.matches($1) ? 1 : 0)
-    }.description
+  var i = 0
+  var checked: [[String]: Bool] = [["0"]: true]
+
+  func isValid(_ line: [String]) -> Bool {
+    if let v = checked[line] { return v }
+    if i % 10_000 == 0 { print(i, line.joined(separator: " ")) }
+    if line == ["0"] { return true }
+    // if i > 10 { preconditionFailure("HALT") }
+    i += 1
+    for (idx, rule) in zip(indices, rules) {
+      for part in rule.split(separator: "|").map({Array($0)}) {
+        let matches = line.lazy.enumerated().compactMap { idx, str in
+          return str == part[0] ? idx : nil
+        }.filter { idx in
+          Array(line[idx...].prefix(part.count)) == part
+        }
+        if matches.isEmpty { continue }
+
+        if part[0].contains("\"") {
+          // literal, we replace all in one go
+          var newLine = line
+          for match in matches.reversed() {
+            newLine.replaceSubrange(match..<(match+part.count), with: [idx])
+          }
+          // print("lit:", newLine)
+          if isValid(newLine) {
+            checked[line] = true
+            print("found")
+            return true
+          }
+        } else {
+          for match in matches {
+            var newLine = line
+            newLine.replaceSubrange(match..<(match+part.count), with: [idx])
+
+            if isValid(newLine) {
+              checked[line] = true
+              print("found")
+              return true
+            }
+          }
+        }
+      }
+    }
+    // print("not found: \(line)")
+    checked[line] = false
+    return false
   }
 
   func solve2() -> String {
