@@ -1,91 +1,101 @@
 class Solution19: Solving {
-  let indices: [String]
-  let rules: [[String]]
+  var rules: [String: [[String]]] = [:]
   let file: File
-  let input: [[String]]
+  let input: [String]
+  var cache: [String: [String]] = [:]
 
-  var rulesDescription: String { zip(indices, rules).map { "\($0.0): \($0.1)" }.joined(separator: "\n") }
+  var rulesDescription: String { rules.map { "\($0.key): \($0.value)" }.joined(separator: "\n") }
 
   required init(file: File) {
     self.file = file
     let sections = file.linesSplitByEmptyLine
-    var rules: [[String]] = []
-    var indices: [String] = []
     for line in sections[0] {
       let splitIndex = line.components(separatedBy: ": ")
-      indices.append(splitIndex[0])
-      rules.append(splitIndex[1].components(separatedBy: " "))
-    }
-    self.rules = rules
-    self.indices = indices
+      if splitIndex[1] == "\"a\"" || splitIndex[1] == "\"b\"" {
+        cache[splitIndex[0]] = [String(splitIndex[1].dropFirst().dropLast())]
+        continue
+      }
+      let rawRule = splitIndex[1].components(separatedBy: " | ")
 
-    input = sections[1].map { line in
-      line.map { "\"\($0)\"" }
+      rules[splitIndex[0]] = rawRule.map { $0.components(separatedBy: " ") }
     }
+
+    input = sections[1]
   }
 
   func solve1() -> String {
     var valids = 0
+    // print(rulesDescription)
+    let allOptions = generateOptions(id: "0")
+    // print(allOptions)
     for line in input {
-      let v = isValid(line)
-      print(v, line.joined(separator: " "))
-      valids += v ? 1 : 0
+      var isValid = false
+      for option in allOptions {
+        if line == option { isValid = true; break }
+      }
+
+      print(isValid, line)
+      valids += isValid ? 1 : 0
     }
     return valids.description
   }
 
-  var i = 0
   var checked: [[String]: Bool] = [["0"]: true]
 
-  func isValid(_ line: [String]) -> Bool {
-    if let v = checked[line] { return v }
-    if i % 10_000 == 0 { print(i, line.joined(separator: " ")) }
-    if line == ["0"] { return true }
-    // if i > 10 { preconditionFailure("HALT") }
-    i += 1
-    for (idx, rule) in zip(indices, rules) {
-      for part in rule.split(separator: "|").map({Array($0)}) {
-        let matches = line.lazy.enumerated().compactMap { idx, str in
-          return str == part[0] ? idx : nil
-        }.filter { idx in
-          Array(line[idx...].prefix(part.count)) == part
-        }
-        if matches.isEmpty { continue }
+  func generateOptions(id: String = "0", depth: Int = 1) -> [String] {
+    var depth = depth
+    // print(id, cache)
+    if let c = cache[id] { return c }
 
-        if part[0].contains("\"") {
-          // literal, we replace all in one go
-          var newLine = line
-          for match in matches.reversed() {
-            newLine.replaceSubrange(match..<(match+part.count), with: [idx])
-          }
-          // print("lit:", newLine)
-          if isValid(newLine) {
-            checked[line] = true
-            print("found")
-            return true
-          }
-        } else {
-          for match in matches {
-            var newLine = line
-            newLine.replaceSubrange(match..<(match+part.count), with: [idx])
+    let subRules = rules[id]!
+    cache[id] = []
 
-            if isValid(newLine) {
-              checked[line] = true
-              print("found")
-              return true
-            }
-          }
+    for r in subRules {
+      if r.contains(id) {
+        depth += 1
+        if depth == 10 {
+          return []
         }
       }
+      // print("checking sub:", r)
+      var concat: [[String]] = []
+      for sub in r {
+        concat.append(generateOptions(id: sub, depth: depth))
+      }
+      // print("concating: ", concat)
+      cache[id] = cache[id]! + concatenateOptions(res: "", optList: concat)
     }
-    // print("not found: \(line)")
-    checked[line] = false
-    return false
+    return cache[id]!
+  }
+
+  func concatenateOptions(res: String, optList: [[String]]) -> [String] {
+    if optList.isEmpty { return [res]}
+    let first = optList.first!
+
+    var opts: [String] = []
+    for str in first {
+      opts.append(contentsOf: concatenateOptions(res: res + str, optList: Array(optList.dropFirst())))
+    }
+    return opts
   }
 
   func solve2() -> String {
+    var valids = 0
 
-    return file.lines.joined(separator: "\n")
+    rules["8"] = [["42"], ["42", "8"]]
+    rules["11"] = [["42", "31"], ["42", "11", "31"]]
+
+    let allOptions = generateOptions(id: "0")
+
+    for line in input {
+      var isValid = false
+      for option in allOptions {
+        if line == option { isValid = true; break }
+      }
+
+      print(isValid, line)
+      valids += isValid ? 1 : 0
+    }
+    return valids.description
   }
-
 }
