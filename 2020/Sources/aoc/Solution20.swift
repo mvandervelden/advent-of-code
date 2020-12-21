@@ -150,6 +150,21 @@ class Solution20: Solving {
       hasher.combine(or)
     }
 
+    var borders: [[Character]] {
+      var tileSides: [[Character]] = []
+      tileSides.append(t[0])
+      tileSides.append(t[0].reversed())
+      tileSides.append(t.last!)
+      tileSides.append(t.last!.reversed())
+      let col0 = t.map { $0[0] }
+      tileSides.append(col0)
+      tileSides.append(col0.reversed())
+      let colLast = t.map { $0.last! }
+      tileSides.append(colLast)
+      tileSides.append(colLast.reversed())
+      return tileSides
+    }
+
     func fits(_ other: Tile, on side: Side) -> Bool {
       switch side {
       case .top:
@@ -183,124 +198,40 @@ class Solution20: Solving {
   }
 
   let file: File
-  let tiles: [Tile]
+  var tiles: [Int: Tile] = [:]
   lazy var size = Int(Double(tiles.count).squareRoot())
-  var potentialSides: [[[Character]]] = []
+  var allBorders: [[Character]: [Int]] = [:]
 
   required init(file: File) {
     self.file = file
-    tiles = file.linesSplitByEmptyLine.map { block in
+
+    for block in file.linesSplitByEmptyLine {
       let id = Int(block[0].dropFirst(5).dropLast())!
       let t = block.dropFirst().map { (line: String) -> [Character] in
         Array(line)
       }
-      return Tile(id: id, t: t, or: .normal)
-    }
+      let tile = Tile(id: id, t: t, or: .normal)
+      tiles[id] = tile
 
-    for tile in tiles {
-      var tileSides: [[Character]] = []
-      tileSides.append(tile.t[0])
-      tileSides.append(tile.t[0].reversed())
-      tileSides.append(tile.t.last!)
-      tileSides.append(tile.t.last!.reversed())
-      let col0 = tile.t.map { $0[0] }
-      tileSides.append(col0)
-      tileSides.append(col0.reversed())
-      let colLast = tile.t.map { $0.last! }
-      tileSides.append(colLast)
-      tileSides.append(colLast.reversed())
-      potentialSides.append(tileSides)
+      for border in tile.borders {
+        allBorders[border, default: []].append(id)
+      }
     }
   }
 
   func solve1() -> String {
-    let start = Grid(g: [], undecided: tiles, side: size)
-    let path = astar(start: start)
-    print(path!.first!.description)
-    return path!.first!.cornerProduct.description
+    let tilesOnEdge = Set(allBorders.values.filter { $0.count == 1 }.flatMap { $0 })
+
+    let tilesOnCorner = tilesOnEdge.filter { edgeID in
+      allBorders.values.filter { $0 == [edgeID] }.count == 4 // 4, becausee the reverse edges are also in there
+    }
+    print("corner pieces: ", tilesOnCorner)
+
+    return tilesOnCorner.reduce(1, *).description
   }
 
   func solve2() -> String {
     return file.lines.joined(separator: "\n")
-  }
-
-  func astar(start: Grid) -> [Grid]? {
-    var closedSet: Set<Grid> = []
-    var openSet: Set<Grid> = [start]
-    var cameFrom: [Grid: Grid] = [:]
-    var gScore: [Grid: Int] = [start: 0]
-    var fScore: [Grid: Int] = [start: heuristicEstimate(start: start)]
-
-    while !openSet.isEmpty {
-      // print("openSet", openSet)
-      // print("closedSet", closedSet)
-      // print("cameFrom", cameFrom)
-      // print("gScore", gScore)
-      // print("fScore", fScore)
-      // print("finding current")
-      let current = openSet.min {
-        let lhsScore = fScore[$0] ?? Int.max
-        let rhsScore = fScore[$1] ?? Int.max
-        return lhsScore < rhsScore //|| (lhsScore == rhsScore && ($0.y < $1.y || ($0.y == $1.y && $0.x < $1.x)))
-      }!
-      // let current = openSet.min { fScore[$0] ?? Int.max < fScore[$1] ?? Int.max }!
-      // print("current", current, fScore[current]!)
-      // if fScore[current]! > 45 {
-      //     print("openSet", openSet)
-      //     print("closedSet", closedSet)
-      //     print("cameFrom", cameFrom)
-      //     print("gScore", gScore)
-      //     print("fScore", fScore)
-      //     fatalError()
-      // }
-      if current.isGoal {
-        print("total cost: ", gScore[current]!)
-        return reconstruct(cameFrom, current: current)
-      }
-
-      openSet.remove(current)
-      closedSet.insert(current)
-
-      for neighbor in neighbors(current) {
-        // print("neighbor", neighbor)
-        if closedSet.contains(neighbor.loc) {
-          continue
-        }
-
-        let tentativeG = gScore[current]! + neighbor.cost// + 1000000 + neighbor.y * 100 + neighbor.x
-
-        if !openSet.contains(neighbor.loc) {
-          openSet.insert(neighbor.loc)
-        } else if tentativeG >= gScore[neighbor.loc] ?? Int.max {
-          continue
-        }
-        // print("Adding neighbor")
-        cameFrom[neighbor.loc] = current
-        gScore[neighbor.loc] = tentativeG
-        fScore[neighbor.loc] = tentativeG + heuristicEstimate(start: neighbor.loc)
-        // print("Added neighbor")
-      }
-    }
-
-    return nil
-  }
-
-  func heuristicEstimate(start: Grid) -> Int {
-    return start.undecided.count
-  }
-
-  func reconstruct(_ cameFrom: [Grid: Grid], current: Grid) -> [Grid] {
-    var current = current
-    var totalPath = [current]
-    while cameFrom[current] != nil {
-      current = cameFrom[current]!
-      totalPath.append(current)
-    }
-    return totalPath
-  }
-
-  func neighbors(_ loc: Grid) -> [(loc: Grid, cost: Int)] {
-    return loc.possibleNextGrids.map { (loc: $0, cost: 1)}
   }
 
   func tilesDescr() -> String {
