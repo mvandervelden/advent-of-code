@@ -237,10 +237,7 @@ class Solution20: Solving {
   func tilesDescr() -> String {
     var descr = ""
     for t in tiles {
-      descr += "Tile \(t.id)\n"
-      for line in t.orientedTile {
-        descr += String(line) + "\n"
-      }
+      descr += "Tile \(t.key)\n"
       descr += "\n"
     }
     return descr
