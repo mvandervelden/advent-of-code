@@ -1,7 +1,20 @@
-extension Collection where Self.Iterator.Element: RandomAccessCollection {
+extension Array where Self.Iterator.Element: RandomAccessCollection, Self.Iterator.Element.Iterator.Element == Character {
   func mirrored() -> [[Self.Iterator.Element.Iterator.Element]] {
     return self.map { $0.reversed() }
   }
+
+  func rotated() -> [[Self.Iterator.Element.Iterator.Element]] {
+      var res: [[Self.Iterator.Element.Iterator.Element]] = []
+
+      for y in self.first!.indices {
+        var row: [Self.Iterator.Element.Iterator.Element] = []
+        for x in indices {
+          row.append(self[(count - 1)-x][y])
+        }
+        res.append(row)
+      }
+      return res
+    }
 }
 
 class Solution20: Solving {
@@ -29,25 +42,14 @@ class Solution20: Solving {
     func transposed(or: Orientation) -> T {
       switch or {
       case ._0: return t
-      case ._90: return rotate(t)
-      case ._180: return rotate(rotate(t))
-      case ._270: return rotate(rotate(rotate(t)))
+      case ._90: return t.rotated()
+      case ._180: return t.rotated().rotated()
+      case ._270: return t.rotated().rotated().rotated()
       case .m0: return t.mirrored()
-      case .m90: return rotate(t).mirrored()
-      case .m180: return rotate(rotate(t)).mirrored()
-      case .m270: return rotate(rotate(rotate(t))).mirrored()
+      case .m90: return t.rotated().mirrored()
+      case .m180: return t.rotated().rotated().mirrored()
+      case .m270: return t.rotated().rotated().rotated().mirrored()
       }
-    }
-
-    func rotate(_ t: T) -> T {
-      var res: T = []
-      for y in t.indices {
-        res.append([])
-        for x in t.indices {
-          res[y].append(t[(t.count - 1)-x][y])
-        }
-      }
-      return res
     }
   }
 
@@ -87,6 +89,7 @@ class Solution20: Solving {
   var tilesOnEdge: Set<Int> = []
   var tilesOnCorner: Set<Int> = []
   var tilesInCenter: Set<Int> = []
+  var grid: T = []
 
   func solve2() -> String {
     tilesOnEdge = Set(allBorders.values.filter { $0.count == 1 }.flatMap { $0 })
@@ -100,7 +103,7 @@ class Solution20: Solving {
 
     // tile id, or, leftBorder, bottomBorder
     var tGrid: [[GridTile]] = []
-    var grid: [[Character]] = Array(repeating: Array(repeating: ".", count: size * 8), count: size * 8)
+    grid = Array(repeating: Array(repeating: ".", count: size * 8), count: size * 8)
     var gridWithBorders: [[Character]] = Array(repeating: Array(repeating: ".", count: size * 10), count: size * 10)
     for y in 0..<size {
       tGrid.append([])
@@ -114,13 +117,62 @@ class Solution20: Solving {
         gridWithBorders = fillWithBorders(t, to: gridWithBorders, x: x, y: y)
       }
     }
+    // printGrid(grid)
+
+    // print(pattern)
+    let size = (x: 20, y: 3)
+
+    let pLines = pattern.components(separatedBy: "\n").map { Array($0) }
+    var allHorizontalPatterns = [pLines]
+    allHorizontalPatterns.append(pLines.rotated().rotated()) // rotated twice
+    allHorizontalPatterns.append(pLines.mirrored()) // hor mirror: .m0
+    allHorizontalPatterns.append(pLines.rotated().rotated().mirrored()) // vertical mirror, .m180
+
+    print("sep")
+    printGrid(allHorizontalPatterns[0])
+    print("sep")
+    printGrid(allHorizontalPatterns[1])
+    print("sep")
+    printGrid(allHorizontalPatterns[3])
+    print("sep")
+
+    var allVerticalPatterns: [[[Character]]] = []
+    allVerticalPatterns.append(pLines.rotated()) // .)90
+    allVerticalPatterns.append(pLines.rotated().reversed()) // .m90
+    allVerticalPatterns.append(pLines.rotated().rotated().rotated()) // ._270
+    allVerticalPatterns.append(pLines.rotated().rotated().rotated().mirrored()) // .m270
+    print(grid.count, grid[0].count)
+    // .0    -> (2, 2) & (1, 16)
+    // .m180 -> (2, 19)
+    // ._270 -> (2, 2) & (16, 3)
+    // ._180 -> (2, 19)
+    var matches = 0
+    for y in 0...(grid.count - size.y) {
+      for x in 0...(grid[0].count - size.x) {
+        for (pattern, or) in zip(allHorizontalPatterns, [Orientation._0, ._180, .m0, .m180]) {
+          if match(pattern: pattern, x: x, y: y, width: size.x, height: size.y) {
+            print("r: \(or): Hor matchFound: \(x), \(y)")
+            matches += 1
+          }
+        }
+      }
+    }
+    for y in 0...(grid.count - size.x) {
+      for x in 0...(grid[0].count - size.y) {
+        for (pattern, or) in zip(allVerticalPatterns, [Orientation._90, .m90, ._270, .m270]) {
+          if match(pattern: pattern, x: x, y: y, width: size.y, height: size.x) {
+            print("r: \(or): Ver matchFound: \(x), \(y)")
+            // print(pattern.map { String($0) }.joined(separator: "\n"))
+            matches += 1
+          }
+        }
+      }
+    }
     printGrid(grid)
-
-
-    // Then to find the monsters, take a sliding window approach, matching with the monster first horizontally (all 4 possible configs),
-    // then vertically (4 again)
-    return file.lines.joined(separator: "\n")
+    return matches.description
   }
+
+  let pattern = "                  # \n#    ##    ##    ###\n #  #  #  #  #  #   "
 
   typealias GridTile = (id: Int, or: Orientation, right: Int, bottom: Int)
 
@@ -191,10 +243,20 @@ class Solution20: Solving {
       default:
         return (id: t, or: ._0, right: tile.right, bottom: tile.bottom)
       }
-    case (let .some(l), nil): // top row
+    case (let .some(l), nil): // top row -> doesn't always work for toop right
+
       let borders = tile.borders
       let leftIdx = borders.firstIndex(of: l)!
       let top = borders[(leftIdx + 1)%4]
+      print(borders)
+      print(borders.map { allBorders[$0]!.count })
+      let uniques = borders.filter { allBorders[$0]!.count == 1 }
+      if uniques.count > 1 {
+        // volgorde cw: l, unique, unique, b
+        let uniqIndices = uniques.map { borders.firstIndex(of: $0)! }.sorted()
+        if uniqIndices[0] + 1 == uniqIndices[1] { /*not mirrored*/ }
+
+      }
       let isMirrored = allBorders[top]!.count != 1
       switch (leftIdx, isMirrored) {
       case (0, false): // left side is on top
@@ -288,6 +350,29 @@ class Solution20: Solving {
       }
     }
     return grid
+  }
+
+  func match(pattern: T, x: Int, y: Int, width: Int, height: Int) -> Bool {
+    let res = true
+
+    for yy in 0..<height {
+      for xx in 0..<width {
+        let p = pattern[yy][xx]
+        let g = grid[y + yy][x + xx]
+        if p == "#" && !(g == "#" || g == "O") {
+          return false
+        }
+      }
+    }
+    for yy in 0..<height {
+      for xx in 0..<width {
+        let p = pattern[yy][xx]
+        if p == "#" {
+          grid[y + yy][x + xx] = "O"
+        }
+      }
+    }
+    return res
   }
 
   func tilesDescr() -> String {
