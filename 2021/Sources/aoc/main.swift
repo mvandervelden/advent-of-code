@@ -8,7 +8,7 @@ protocol Solving {
 }
 
 struct AOC: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Running AOC 2020")
+    static let configuration = CommandConfiguration(abstract: "Running AOC 2021")
 
     @Argument(help: "Day (1-25)")
     private var day: Int
