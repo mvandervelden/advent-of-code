@@ -1,3 +1,16 @@
-# aoc
+# Advent of Code 2021, by Maarten
 
-A description of this package.
+This is the Advent of Code 2021 solutions by Maarten.
+
+Written in Swift on the command line, using SPM.
+
+## Installation
+- `swift build`
+
+## Running
+- `swift run aoc <day> [<part>] [<input-file-name>]`
+
+### Arguments
+- `<day>`: Day (1-25) 
+- `<part>`: Part (1-2) (default: 1)
+- `<input-file-name>`: input filename (default: input.txt). Naming convention for example input: `example.1.txt`
