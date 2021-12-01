@@ -9,10 +9,8 @@ class Solution01: Solving {
     let numbers = file.lines.map { Int($0)! }
     var result = 0
 
-    for n in numbers {
-      for o in numbers where n + o == 2020 {
-        result = n*o
-      }
+    for i in 1..<numbers.count {
+      result += numbers[i] > numbers[i-1] ? 1 : 0
     }
 
     return result.description
@@ -20,14 +18,17 @@ class Solution01: Solving {
 
   func solve2() -> String {
     let numbers = file.lines.map { Int($0)! }
+
+    var windows: [Int] = []
+
+    for i in 2..<numbers.count {
+      windows.append(numbers[i-2] + numbers[i-1] + numbers[i])
+    }
+
     var result = 0
 
-    for n in numbers {
-      for o in numbers {
-        for p in numbers where n + o + p == 2020 {
-          result = n*o*p
-        }
-      }
+    for i in 1..<windows.count {
+      result += windows[i] > windows[i-1] ? 1 : 0
     }
 
     return result.description
