@@ -33,7 +33,7 @@ class File {
     return lines.map { Array($0) }
   }()
 
-lazy var linesSplitByEmptyLine: [Lines] = {
+  lazy var linesSplitByEmptyLine: [Lines] = {
     return string.components(separatedBy: "\n\n").map { (block: String) in
       block.split(separator: "\n").map(String.init)
     }
@@ -51,6 +51,14 @@ lazy var linesSplitByEmptyLine: [Lines] = {
         }
       }
       return words
+    }
+  }()
+
+  lazy var wordsByLineSplitByEmptyLine: [Words] = {
+    return string.components(separatedBy: "\n\n").map { (block: String) in
+      let lines: [Lines] = block.split(separator: "\n")
+        .map { $0.split(separator: " ").map(String.init) }
+      return lines
     }
   }()
 
