@@ -29,6 +29,10 @@ class File {
     return lines.map { $0.split(separator: " ").map(String.init) }
   }()
 
+  lazy var csv: Words = {
+    return lines.map { $0.split(separator: ",").map(String.init) }
+  }()
+
   lazy var charsByLine: [[Character]] = {
     return lines.map { Array($0) }
   }()
