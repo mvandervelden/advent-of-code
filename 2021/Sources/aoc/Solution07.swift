@@ -23,7 +23,6 @@ class Solution07: Solving {
 
   func solve2() -> String {
     let crabs = file.csv[0].compactMap(Int.init).sorted()
-
     let mean = crabs.sum() / crabs.count
 
     var costs: [Int] = []

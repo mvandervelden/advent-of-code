@@ -14,7 +14,7 @@ class Solution06: Solving {
   }
 
   private func algorithm(days: Int) -> String {
-   let fish = file.csv[0].compactMap(Int.init)
+    let fish = file.csv[0].compactMap(Int.init)
     var tank: [Int: Int] = [:]
 
     for f in fish {
