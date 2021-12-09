@@ -1,22 +1,4 @@
 class Solution05: Solving {
-  struct Point2D: Hashable, CustomStringConvertible {
-    let x: Int
-    let y: Int
-
-    init(x: Int, y: Int) {
-      self.x = x
-      self.y = y
-    }
-
-    init(string: String) {
-      let parts = string.split(separator: ",").map { Int($0)! }
-      x = parts[0]
-      y = parts[1]
-    }
-
-    var description: String { "(\(x),\(y))" }
-  }
-
   struct Vector2D: CustomStringConvertible {
     let start: Point2D
     let end: Point2D
