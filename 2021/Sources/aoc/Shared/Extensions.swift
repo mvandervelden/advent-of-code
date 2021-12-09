@@ -1,5 +1,6 @@
 extension Collection where Element == Int {
     func sum() -> Int { reduce(0, +) }
+    func product() -> Int { reduce(1, *) }
 }
 
 extension Collection {

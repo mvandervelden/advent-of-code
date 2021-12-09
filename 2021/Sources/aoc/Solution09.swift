@@ -1,6 +1,8 @@
 class Solution09: Solving {
   let file: File
   var grid: [[Int]] = []
+  lazy var yMax: Int = grid.count
+  lazy var xMax: Int = grid[0].count
 
   required init(file: File) {
     self.file = file
@@ -18,20 +20,18 @@ class Solution09: Solving {
     grid = file.charsByLine.map{ line in line.map { Int(String($0))! }}
     let lows = findLows()
 
+    var sizes: [Int] = []
     for low in lows {
-      var basin = [low]
-
-      // TODO
+      let basin = bfs(root: low)
+      sizes.append(basin.count)
     }
 
-    return lows.description
+    let result = sizes.sorted().reversed()[0..<3].product()
+    return result.description
   }
 
   private func findLows() -> [Point2D] {
     var lows: [Point2D] = []
-
-    let yMax = grid.count
-    let xMax = grid[0].count
 
     for y in 0..<yMax {
       for x in 0..<xMax {
@@ -58,5 +58,49 @@ class Solution09: Solving {
     }
 
     return lows
+  }
+
+  private func bfs(root: Point2D) -> Set<Point2D> {
+    var queue: [Point2D] = [root]
+    var explored: Set<Point2D> = [root]
+    var result: Set<Point2D> = []
+
+    while !queue.isEmpty {
+      let point = queue.removeLast()
+
+      if grid[point.y][point.x] == 9 {
+        continue
+      } else {
+        result.insert(point)
+        for next in getAdjacent(point) {
+          if !explored.contains(next) {
+            explored.insert(next)
+            queue.append(next)
+          }
+        }
+      }
+    }
+    return result
+  }
+
+  private func getAdjacent(_ point: Point2D) -> [Point2D] {
+    let maxY = yMax - 1
+    let maxX = xMax - 1
+    let xPlus = Point2D(x: point.x + 1, y: point.y)
+    let xMin  = Point2D(x: point.x - 1, y: point.y)
+    let yPlus = Point2D(x: point.x, y: point.y + 1)
+    let yMin  = Point2D(x: point.x, y: point.y - 1)
+
+    switch (point.x, point.y) {
+    case (0, 0):       return [xPlus, yPlus]
+    case (0, maxY):    return [xPlus, yMin]
+    case (maxX, 0):    return [xMin, yPlus]
+    case (maxX, maxY): return [xMin, yMin]
+    case (0, _):       return [xPlus, yMin, yPlus]
+    case (maxX, _):    return [xMin, yMin, yPlus]
+    case (_, 0):       return [xMin, xPlus, yPlus]
+    case (_, maxY):    return [xMin, xPlus, yMin]
+    default:           return [xMin, xPlus, yMin, yPlus]
+    }
   }
 }
