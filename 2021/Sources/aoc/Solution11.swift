@@ -44,7 +44,7 @@ class Solution11: Solving {
   }
 
   func solve2() -> String {
-var octos = file.charsByLine.map { line in line.map { Int(String($0))! } }
+    var octos = file.charsByLine.map { line in line.map { Int(String($0))! } }
     var score = 0
 
     for i in 1...250 {
