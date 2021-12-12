@@ -7,14 +7,10 @@ class Solution12: Solving {
 
     init(string: String) {
       switch string {
-      case "start":
-        self = .start
-      case "end":
-        self = .end
-      case _ where string.uppercased() == string:
-        self = .large(string)
-      default:
-        self = .small(string)
+      case "start": self = .start
+      case "end": self = .end
+      case _ where string.uppercased() == string: self = .large(string)
+      default: self = .small(string)
       }
     }
 
@@ -36,26 +32,19 @@ class Solution12: Solving {
 
   func solve1() -> String {
     edges = file.lines.map { $0.split(separator: "-").map(String.init).map(Node.init) }
-
     let paths = search(path: [.start], visited: [.start], twiceUsed: true)
-
     return paths.count.description
   }
 
   func solve2() -> String {
     edges = file.lines.map { $0.split(separator: "-").map(String.init).map(Node.init) }
-
     let paths = search(path: [.start], visited: [.start], twiceUsed: false)
-
     return paths.count.description
   }
 
   private func search(path: [Node], visited: Set<Node>, twiceUsed: Bool) -> Set<[Node]> {
     let node = path.last!
-
-    if node == .end {
-      return [path]
-    }
+    if node == .end { return [path] }
 
     var paths: Set<[Node]> = []
 
