@@ -33,4 +33,23 @@ struct Point2D: Hashable, CustomStringConvertible {
 
     return neighbors
   }
+
+  func nonDiagNeighbors(maxX: Int, maxY: Int) -> [Point2D] {
+    let xPlus = Point2D(x: x + 1, y: y)
+    let xMin  = Point2D(x: x - 1, y: y)
+    let yPlus = Point2D(x: x, y: y + 1)
+    let yMin  = Point2D(x: x, y: y - 1)
+
+    switch (x, y) {
+    case (0, 0):       return [xPlus, yPlus]
+    case (0, maxY):    return [xPlus, yMin]
+    case (maxX, 0):    return [xMin, yPlus]
+    case (maxX, maxY): return [xMin, yMin]
+    case (0, _):       return [xPlus, yMin, yPlus]
+    case (maxX, _):    return [xMin, yMin, yPlus]
+    case (_, 0):       return [xMin, xPlus, yPlus]
+    case (_, maxY):    return [xMin, xPlus, yMin]
+    default:           return [xMin, xPlus, yMin, yPlus]
+    }
+  }
 }
