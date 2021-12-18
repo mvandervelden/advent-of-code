@@ -111,14 +111,14 @@ class Solution18: Solving {
     var result = item
     while !parsedExplosions {
       let (newResult, event) = resolveExplosions(result, depth: 0)
-      print(result, "will resolve:", event)
+      // print(result, "will resolve:", event)
       result = newResult
       if case .ok = event { parsedExplosions = true }
       if case .explode = event { didHaveAnyEvent = true }
     }
 
     let (newResult, event) = resolveSplits(result)
-    print(result, "will resolve:", event)
+    // print(result, "will resolve:", event)
     result = newResult
     if case .split = event { didHaveAnyEvent = true }
 
