@@ -46,6 +46,13 @@ class Solution18: Solving {
       case .pair(let l, let r): return "[\(l),\(r)]"
       }
     }
+
+    var magnitude: Int {
+      switch self {
+      case .literal(let n): return n
+      case .pair(let l, let r): return 3 * l.magnitude + 2 * r.magnitude
+      }
+    }
   }
 
   let file: File
@@ -66,39 +73,68 @@ class Solution18: Solving {
       var isResolved = false
 
       while !isResolved {
-        let (newResult, event) = resolve(result, depth: 0)
-        print(newResult, "didResolve:", event)
+        let (newResult, eventsHappened) = resolve(result)
         result = newResult
-        isResolved = event == .ok
+        isResolved = !eventsHappened
       }
       print(result)
     }
 
-    return result.description
+    return result.magnitude.description
   }
 
   func solve2() -> String {
-    return "TBD"
+    let lines = file.lines.map(Item.init)
+    var topMagnitude = 0
+
+    for i in 0..<lines.count {
+      for j in 0..<lines.count where i != j {
+        var result = Item.pair(l: lines[i], r: lines[j])
+        var isResolved = false
+
+        while !isResolved {
+          let (newResult, eventsHappened) = resolve(result)
+          result = newResult
+          isResolved = !eventsHappened
+        }
+        let mag = result.magnitude
+        topMagnitude = max(mag, topMagnitude)
+      }
+    }
+
+    return topMagnitude.description
   }
 
-  private func resolve(_ item: Item, depth: Int) -> (Item, Event) {
+  private func resolve(_ item: Item) -> (Item, Bool) {
+    var didHaveAnyEvent = false
+    var parsedExplosions = false
+    var result = item
+    while !parsedExplosions {
+      let (newResult, event) = resolveExplosions(result, depth: 0)
+      print(result, "will resolve:", event)
+      result = newResult
+      if case .ok = event { parsedExplosions = true }
+      if case .explode = event { didHaveAnyEvent = true }
+    }
+
+    let (newResult, event) = resolveSplits(result)
+    print(result, "will resolve:", event)
+    result = newResult
+    if case .split = event { didHaveAnyEvent = true }
+
+    return (result, didHaveAnyEvent)
+  }
+
+  private func resolveExplosions(_ item: Item, depth: Int) -> (Item, Event) {
     switch item {
-    case .literal(0..<10): return (item, .ok)
-    // split even
-    case .literal(let n) where n%2 == 0:
-      let newN = n / 2
-      return (.pair(l: .literal(newN), r: .literal(newN)), .split)
-    // split odd
-    case .literal(let n):
-      let newN = n / 2
-      return (.pair(l: .literal(newN), r: .literal(newN + 1)), .split)
+    case .literal: return (item, .ok)
     // explode
     case .pair(.literal(let l), .literal(let r)) where depth == 4:
       return (.literal(0), .explode(l: l, r: r))
     case .pair where depth == 4:
       fatalError("unexpected situation, found \(item) at depth 4")
     case .pair(let l, let r):
-      let (lResult, lEvent) = resolve(l, depth: depth + 1)
+      let (lResult, lEvent) = resolveExplosions(l, depth: depth + 1)
       switch lEvent {
       case .ok:
         break
@@ -111,7 +147,7 @@ class Solution18: Solving {
         return (.pair(l: lResult, r: r), lEvent)
       }
 
-      let (rResult, rEvent) = resolve(r, depth: depth + 1)
+      let (rResult, rEvent) = resolveExplosions(r, depth: depth + 1)
       switch rEvent {
       case .ok:
         break
@@ -125,6 +161,31 @@ class Solution18: Solving {
       }
 
       return (item, .ok)
+    }
+  }
+
+  private func resolveSplits(_ item: Item) -> (Item, Event) {
+    switch item {
+    case .literal(0..<10): return (item, .ok)
+    // split even
+    case .literal(let n) where n%2 == 0:
+      let newN = n / 2
+      return (.pair(l: .literal(newN), r: .literal(newN)), .split)
+    // split odd
+    case .literal(let n):
+      let newN = n / 2
+      return (.pair(l: .literal(newN), r: .literal(newN + 1)), .split)
+    // pairs
+    case .pair(let l, let r):
+      let (lResult, lEvent) = resolveSplits(l)
+      switch lEvent {
+      case .split:
+        return (.pair(l: lResult, r: r), lEvent)
+      default: break
+      }
+
+      let (rResult, rEvent) = resolveSplits(r)
+      return (.pair(l: lResult, r: rResult), rEvent)
     }
   }
 
