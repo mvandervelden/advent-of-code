@@ -28,7 +28,6 @@ class Solution03: Solving {
 
     return groups.reduce(0) {
       let intersection = Set($1[0]).intersection(Set($1[1])).intersection(Set($1[2]))
-      if intersection.count > 1  { print($1.map { String($0.sorted()) }.joined(separator: "\n")); print(intersection) }
       return $0 + Int(intersection.first!.priority)
     }.description
   }
