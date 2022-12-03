@@ -17,14 +17,7 @@ class Solution03: Solving {
 
   func solve2() -> String {
     let sacks = file.charsByLine
-    let groups = sacks.enumerated().reduce([[[Character]]]()) {
-      switch $1.offset % 3 {
-      case 0:
-        return $0 + [[$1.element]]
-      default:
-        return $0[..<($0.count - 1)] + [$0.last! + [$1.element]]
-      }
-    }
+    let groups = sacks.chunked(into: 3)
 
     return groups.reduce(0) {
       let intersection = Set($1[0]).intersection(Set($1[1])).intersection(Set($1[2]))
