@@ -73,6 +73,60 @@ class Solution08: Solving {
   }
 
   func solve2() -> String {
-    return file.filename
+    let grid = file.charsByLine.map { $0.map { Int(String($0))! } }
+    print(grid.prettyDescription)
+    print()
+
+    let height = grid.count
+    let width = grid[0].count
+    var scoreGrid = Array(repeating: Array(repeating: 0, count: width), count: height)
+
+    var currentBest = -1
+
+    for evalY in 1..<(height-1) {
+      for evalX in 1..<(width-1) {
+        let tree = grid[evalY][evalX]
+        var score = 1
+        // check up
+        var y = evalY-1
+        while y>0, grid[y][evalX] < tree {
+          y -= 1
+        }
+        let scoreUp = evalY-y
+        score *= evalY-y
+
+        // check down
+        y = evalY+1
+        while y < height - 1, grid[y][evalX] < tree {
+          y += 1
+        }
+        let scoreDown = y-evalY
+        score *= y-evalY
+
+        // check left
+        var x = evalX-1
+        while x > 0, grid[evalY][x] < tree {
+          x -= 1
+        }
+        let scoreLeft = evalX-x
+        score *= evalX-x
+
+        // check right
+        x = evalX+1
+        while x < width - 1, grid[evalY][x] < tree {
+          x += 1
+        }
+        let scoreRight = x-evalX
+        score *= x-evalX
+
+        print(evalX, evalY, ":", score, "(", scoreUp, scoreDown, scoreLeft, scoreRight, ")")
+        scoreGrid[evalY][evalX] = score
+        currentBest = max(score, currentBest)
+      }
+    }
+
+    print(scoreGrid.prettyDescription)
+
+    return currentBest.description
   }
 }
