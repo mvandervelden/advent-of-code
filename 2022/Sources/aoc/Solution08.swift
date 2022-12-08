@@ -65,8 +65,6 @@ class Solution08: Solving {
       }
     }
 
-    print(grid.prettyDescription)
-    print()
     print(visibilityGrid.prettyDescription)
 
     return visibilityGrid.sum().description
@@ -74,8 +72,6 @@ class Solution08: Solving {
 
   func solve2() -> String {
     let grid = file.charsByLine.map { $0.map { Int(String($0))! } }
-    print(grid.prettyDescription)
-    print()
 
     let height = grid.count
     let width = grid[0].count
@@ -87,13 +83,14 @@ class Solution08: Solving {
       for evalX in 1..<(width-1) {
         let tree = grid[evalY][evalX]
         var score = 1
+
         // check up
         var y = evalY-1
         while y>0, grid[y][evalX] < tree {
           y -= 1
         }
         let scoreUp = evalY-y
-        score *= evalY-y
+        score *= scoreUp
 
         // check down
         y = evalY+1
@@ -101,7 +98,7 @@ class Solution08: Solving {
           y += 1
         }
         let scoreDown = y-evalY
-        score *= y-evalY
+        score *= scoreDown
 
         // check left
         var x = evalX-1
@@ -109,7 +106,7 @@ class Solution08: Solving {
           x -= 1
         }
         let scoreLeft = evalX-x
-        score *= evalX-x
+        score *= scoreLeft
 
         // check right
         x = evalX+1
@@ -117,9 +114,9 @@ class Solution08: Solving {
           x += 1
         }
         let scoreRight = x-evalX
-        score *= x-evalX
+        score *= scoreRight
 
-        print(evalX, evalY, ":", score, "(", scoreUp, scoreDown, scoreLeft, scoreRight, ")")
+        // print(evalX, evalY, ":", score, "(", scoreUp, scoreDown, scoreLeft, scoreRight, ")")
         scoreGrid[evalY][evalX] = score
         currentBest = max(score, currentBest)
       }
