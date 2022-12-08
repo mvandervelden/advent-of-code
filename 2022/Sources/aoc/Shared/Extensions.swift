@@ -16,3 +16,15 @@ extension Array {
         }
     }
 }
+
+extension Array where Element: CustomStringConvertible {
+  var prettyDescription: String {
+    map { $0.description }.joined(separator: "\n")
+  }
+}
+
+extension Collection where Element: Collection<Int> {
+  func sum() -> Int {
+    reduce(0) { $0 + $1.sum() }
+  }
+}

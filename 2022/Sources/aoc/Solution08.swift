@@ -45,11 +45,7 @@ class Solution08: Solving {
         } else {
           visibilityFromLeft[y][x] = visibilityFromLeft[y][x-1]
         }
-      // }
-    // }
 
-    // for yDiff in 1..<(height-1) {
-    //   for xDiff in 1..<(width-1) {
         let yBottom = height-y-1
         let xRight = width-x-1
 
@@ -73,16 +69,10 @@ class Solution08: Solving {
     print()
     print(visibilityGrid.prettyDescription)
 
-    return visibilityGrid.reduce(0) { $0 + $1.sum() }.description
+    return visibilityGrid.sum().description
   }
 
   func solve2() -> String {
     return file.filename
-  }
-}
-
-extension Array where Element: CustomStringConvertible {
-  var prettyDescription: String {
-    map { $0.description }.joined(separator: "\n")
   }
 }
