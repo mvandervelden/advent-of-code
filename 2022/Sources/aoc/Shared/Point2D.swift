@@ -15,6 +15,25 @@ struct Point2D: Hashable, CustomStringConvertible {
 
   var description: String { "(\(x),\(y))" }
 
+  func neighbors() -> [Point2D] {
+    let xMin = x - 1
+    let yMin = y - 1
+    let xMax = x + 1
+    let yMax = y + 1
+
+    var neighbors: [Point2D] = []
+
+    for xx in xMin...xMax {
+      for yy in yMin...yMax {
+        if xx == x && yy == y { continue }
+
+        neighbors.append(Point2D(x: xx, y: yy))
+      }
+    }
+
+    return neighbors
+  }
+
   func neighbors(maxX: Int, maxY: Int) -> [Point2D] {
     let xMin = max(x - 1, 0)
     let yMin = max(y - 1, 0)
@@ -51,5 +70,25 @@ struct Point2D: Hashable, CustomStringConvertible {
     case (_, maxY):    return [xMin, xPlus, yMin]
     default:           return [xMin, xPlus, yMin, yPlus]
     }
+  }
+
+  func isAdjacentTo(_ other: Point2D) -> Bool {
+    return neighbors().contains(other) || self == other
+  }
+
+  func up(_ count: Int) -> Point2D {
+    return Point2D(x: x, y: y - count)
+  }
+
+  func down(_ count: Int) -> Point2D {
+    return Point2D(x: x, y: y + count)
+  }
+
+  func left(_ count: Int) -> Point2D {
+    return Point2D(x: x - count, y: y)
+  }
+
+  func right(_ count: Int) -> Point2D {
+    return Point2D(x: x + count, y: y)
   }
 }
