@@ -24,12 +24,36 @@ class Solution12: Solving {
     let astar = AStar(grid: grid)
     let path = astar.astar(start: start, goal: end)!
 
-    print(path)
     return (path.count-1).description
   }
 
   func solve2() -> String {
-    return file.filename
+    var grid = file.charsByLine
+
+    var start: Point2D! = nil
+    var end: Point2D! = nil
+    var starts: [Point2D] = []
+    for (i, line) in grid.enumerated() {
+      for (j, char) in line.enumerated() {
+        if char == "a" { starts.append(Point2D(x: j, y: i)) }
+        if char == "S" { start = Point2D(x: j, y: i); starts.append(start) }
+        if char == "E" { end = Point2D(x: j, y: i) }
+      }
+    }
+
+    grid[start.y][start.x] = "a"
+    grid[end.y][end.x] = "z"
+
+    var minSteps = Int.max
+    let astar = AStar(grid: grid)
+
+    for s in starts {
+      guard let path = astar.astar(start: s, goal: end) else { continue }
+      minSteps = min(minSteps, path.count-1)
+    }
+
+
+    return minSteps.description
   }
 
   class AStar {
