@@ -77,7 +77,7 @@ class Solution11: Solving {
     let monkeys = file.linesSplitByEmptyLine.map(Monkey.init)
     let leastCommonDenominator = monkeys.reduce(1) { $0 * $1.denominator }
 
-    for i in 0..<10_000 {
+    for _ in 0..<10_000 {
       for monkey in monkeys {
         for item in monkey.items {
           var newVal = monkey.inspect(item)

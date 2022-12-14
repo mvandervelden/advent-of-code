@@ -76,19 +76,26 @@ struct Point2D: Hashable, CustomStringConvertible {
     return neighbors().contains(other) || self == other
   }
 
-  func up(_ count: Int) -> Point2D {
+  func up(_ count: Int = 1) -> Point2D {
     return Point2D(x: x, y: y - count)
   }
 
-  func down(_ count: Int) -> Point2D {
+  func down(_ count: Int = 1) -> Point2D {
     return Point2D(x: x, y: y + count)
   }
 
-  func left(_ count: Int) -> Point2D {
+  func left(_ count: Int = 1) -> Point2D {
     return Point2D(x: x - count, y: y)
   }
 
-  func right(_ count: Int) -> Point2D {
+  func right(_ count: Int = 1) -> Point2D {
     return Point2D(x: x + count, y: y)
+  }
+
+  func isIn(grid: [[Any]], xOffset: Int = 0, yOffset: Int = 0) -> Bool {
+    return y-yOffset < grid.count
+      && y-yOffset >= 0
+      && x-xOffset < grid[0].count
+      && x-xOffset >= 0
   }
 }

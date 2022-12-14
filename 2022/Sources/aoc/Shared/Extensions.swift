@@ -17,6 +17,16 @@ extension Array {
     }
 }
 
+extension Array where Element == Character {
+  var prettyDescription: String { String(self) }
+}
+
+extension Array where Element == [Character] {
+  var prettyDescription: String {
+    map { $0.prettyDescription }.joined(separator: "\n")
+   }
+}
+
 extension Array where Element: CustomStringConvertible {
   var prettyDescription: String {
     map { $0.description }.joined(separator: "\n")
