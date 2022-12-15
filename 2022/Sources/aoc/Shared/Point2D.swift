@@ -98,4 +98,6 @@ struct Point2D: Hashable, CustomStringConvertible {
       && x-xOffset < grid[0].count
       && x-xOffset >= 0
   }
+
+  func manhattanDist(to: Point2D) -> Int { abs(x - to.x) + abs(y - to.y) }
 }
