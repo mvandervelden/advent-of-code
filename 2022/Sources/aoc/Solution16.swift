@@ -67,7 +67,7 @@ class Solution16: Solving {
       }
 
       if let o = position.openNeighbor {
-        return [(position: o, cost: 1-position.totalFlow)] + neighbors
+        return [(position: o, cost: 1-o.totalFlow)] + neighbors
       }
 
       return neighbors
@@ -85,7 +85,7 @@ class Solution16: Solving {
     var isOpen: Bool { openValves.contains(valve.id) }
 
     func heuristicEstimate(to goal: Self) -> Int {
-      return goal.totalFlow - totalFlow
+      return goal.totalFlow - totalFlow - (minutesLeft * totalFlow)
     }
 
     var openNeighbor: Position? {
@@ -143,6 +143,7 @@ class Solution16: Solving {
         openSet.remove(current)
         closedSet.insert(current)
         print("cur", current)
+        print("cost", gScore[current]!, "est", fScore[current]!)
         for neighbor in neighbors(current) {
           // print("nbr", neighbor)
           if closedSet.contains(neighbor.position) {
