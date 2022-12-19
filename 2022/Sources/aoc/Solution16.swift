@@ -1,17 +1,21 @@
 class Solution16: Solving {
   struct Valve: CustomStringConvertible, Hashable {
+    let index: Int
     let id: String
     let flowRate: Int
     let connections: [String]
 
-    init(match: [String]) {
+    init(match: [String], index: Int) {
+      self.index = index
       id = match[1]
       flowRate = Int(match[2])!
       connections = Array(match[3].components(separatedBy: ", "))
     }
 
-    var description: String { "\(id) [\(flowRate)] -> \(connections.joined(separator: ","))" }
+    var description: String { "\(index): \(id) [\(flowRate)] -> \(connections.joined(separator: ","))" }
   }
+
+  static var valveFlow: [Int] = []
 
   let file: File
 
@@ -22,166 +26,123 @@ class Solution16: Solving {
   func solve1() -> String {
     let pattern = #"Valve ([A-Z][A-Z]) has flow rate=(\d+); tunnels? leads? to valves? ([A-Z, ]+)"#
 
-    let valves = file.lines.map { line in
+    let valves = file.lines.enumerated().map { i, line in
       let match = line.matchFirst(pattern: pattern)
-      return Valve(match: match)
+      return Valve(match: match, index: i+1)
     }
 
-    let map = Map(valves: valves)
-    let astar = AStar(map: map)
     let startValve = valves.first { $0.id == "AA" }!
-    let startPos = Position(valve: startValve,
-                           openValves: [],
-                           totalFlow: 0,
-                           flowRate: 0,
-                           minutesLeft: 30,
-                           isGoal: false)
-    let goalPos = Position(valve: startValve,
-                           openValves: valves.map(\.id),
-                           totalFlow: Int.max / 2,
-                           flowRate: Int.max / 2,
-                           minutesLeft: 0,
-                           isGoal: true)
-    let path = astar.astar(start: startPos, goal: goalPos)
-    print()
-    return path!.map(\.description).joined(separator: "\n")
+
+    let startState = State(minLeft: 30, curValve: startValve.index, valves: OpenValveSet.with(indices: []))
+    var states: [State: [State: (Int, [State])]] = [:]
+    Solution16.valveFlow = valves.map(\.flowRate)
+
+    states[startState] = [startState: (0, [startState])]
+
+    //var curState = startState
+    var nextStateSet = Set([startState])
+
+    for i in 0..<30 {
+      // print(i, nextStateSet)
+      print(states[startState]!)
+      let curStateSet = nextStateSet
+      nextStateSet = []
+
+      for state in curStateSet {
+        let valve = valves.first { $0.index == state.curValve }!
+        let flowToHere = states[startState]![state]!
+
+        if !state.valves.contains(OpenValveSet(rawValue: valve.index)) {
+          var valveSet = state.valves
+          valveSet.insert(OpenValveSet(rawValue: valve.index))
+          let openValveState = State(minLeft: state.minLeft - 1, curValve: state.curValve, valves: valveSet)
+          nextStateSet.insert(openValveState)
+
+          let newFlow = flowToHere.0 + openValveState.flowRate
+
+          if let existingStateRate = states[state]?[openValveState]?.0, existingStateRate > newFlow {
+          } else {
+            states[state, default: [:]][openValveState] = (newFlow, flowToHere.1 + [openValveState])
+          }
+
+          if let existingRate = states[startState]?[openValveState]?.0, existingRate > newFlow {
+          } else {
+            states[startState, default: [:]][openValveState] = (newFlow, flowToHere.1 + [openValveState])
+          }
+        }
+
+        let nextValves = valve.connections.map { str in valves.first { $0.id == str }! }
+
+        for nextValve in nextValves {
+          let nextState = State(minLeft: state.minLeft - 1, curValve: nextValve.index, valves: state.valves)
+          nextStateSet.insert(nextState)
+
+          let newFlow = flowToHere.0 + nextState.flowRate
+
+          if let existingStateRate = states[state]?[nextState]?.0, existingStateRate > newFlow {
+          } else {
+            states[state, default: [:]][nextState] = (newFlow, flowToHere.1 + [nextState])
+          }
+
+          if let existingRate = states[startState]?[nextState]?.0, existingRate > newFlow {
+          } else {
+            states[startState, default: [:]][nextState] = (newFlow, flowToHere.1 + [nextState])
+          }
+        }
+      }
+    }
+
+    let max = states[startState]!.values.max { $0.0 < $1.0 }
+
+    return "\(max!.0.description)\n\(max!.1.map(\.description).joined(separator: "\n"))"
   }
 
   func solve2() -> String {
     return file.filename
   }
 
-  struct Map {
-    let valves: [Valve]
+  func dp() {
+    // var dist = Array(repeating: Array(repeating: Int.min, count: state.count), count: state.count)
 
-    func neighbors(of position: Position) -> [(position: Position, cost: Int)] {
-      let neighbors = position.valve.connections.map { id in
-        let valve = valves.first { $0.id == id }!
-        let position = Position(valve: valve,
-                                openValves: position.openValves,
-                                totalFlow: position.totalFlow + position.flowRate,
-                                flowRate: position.flowRate,
-                                minutesLeft: position.minutesLeft - 1,
-                                isGoal: false)
-        return (position: position, cost: 1)
-      }
+    // for t in
+  }
 
-      if let o = position.openNeighbor {
-        return [(position: o, cost: 1-o.totalFlow)] + neighbors
-      }
+  struct State: Hashable, CustomStringConvertible {
+    let minLeft: Int
+    let curValve: Int
+    let valves: OpenValveSet
+    // let totalFlow: Int
 
-      return neighbors
+    // func hash(into hasher: inout Hasher) {
+    //     hasher.combine(minLeft)
+    //     hasher.combine(curValves)
+    //     hasher.combine(valves)
+    // }
+
+    var description: String {
+      "(valve: \(curValve), min: \(minLeft), valves: \(valves)) -> \(flowRate)"
+    }
+
+    var flowRate: Int {
+      Solution16.valveFlow.enumerated().filter { i, valve in valves.contains(OpenValveSet(rawValue: i+1)) }.map { $1 }.sum()
     }
   }
 
-  struct Position: Hashable, CustomStringConvertible {
-    let valve: Valve
-    let openValves: [String]
-    let totalFlow: Int
-    let flowRate: Int
-    let minutesLeft: Int
-    let isGoal: Bool
+  struct OpenValveSet: OptionSet, Hashable, CustomStringConvertible {
+    let rawValue: Int
 
-    var isOpen: Bool { openValves.contains(valve.id) }
+    static func with(indices: [Int]) -> OpenValveSet {
+      var set = OpenValveSet(rawValue: 0)
 
-    func heuristicEstimate(to goal: Self) -> Int {
-      return goal.totalFlow - totalFlow - (minutesLeft * totalFlow)
-    }
+      indices.forEach { index in
+        set.insert(OpenValveSet(rawValue: 1 << index))
+      }
 
-    var openNeighbor: Position? {
-      if isOpen { return nil }
-      return Position(valve: valve,
-                      openValves: openValves + [valve.id],
-                      totalFlow: totalFlow + flowRate + valve.flowRate,
-                      flowRate: flowRate + valve.flowRate,
-                      minutesLeft: minutesLeft - 1,
-                      isGoal: false)
-    }
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-      if lhs.isGoal { return rhs.minutesLeft == 0 }
-      if rhs.isGoal { return lhs.minutesLeft == 0 }
-
-      return lhs.valve == rhs.valve &&
-             lhs.openValves == rhs.openValves &&
-             lhs.totalFlow == rhs.totalFlow &&
-             lhs.flowRate == rhs.flowRate &&
-             lhs.minutesLeft == rhs.minutesLeft
+      return set
     }
 
     var description: String {
-      return "open: \(openValves), current: \(valve.description), flow: \(flowRate), total: \(totalFlow), minutesLeft: \(minutesLeft)"
-    }
-  }
-
-  class AStar {
-    let map: Map
-
-    init(map: Map) {
-      self.map = map
-    }
-
-    func astar(start: Position, goal: Position) -> [Position]? {
-      var closedSet: Set<Position> = []
-      var openSet: Set<Position> = [start]
-      var cameFrom: [Position: Position] = [:]
-      var gScore: [Position: Int] = [start: 0]
-      var fScore: [Position: Int] = [start: heuristicEstimate(start: start, goal: goal)]
-
-      while !openSet.isEmpty {
-        let current = openSet.min {
-          let lhsScore = fScore[$0] ?? Int.max
-          let rhsScore = fScore[$1] ?? Int.max
-          return lhsScore < rhsScore
-        }!
-
-        if current == goal {
-          print("total cost: ", gScore[current]!)
-          return reconstruct(cameFrom, current: current)
-        }
-
-        openSet.remove(current)
-        closedSet.insert(current)
-        print("cur", current)
-        print("cost", gScore[current]!, "est", fScore[current]!)
-        for neighbor in neighbors(current) {
-          // print("nbr", neighbor)
-          if closedSet.contains(neighbor.position) {
-            continue
-          }
-
-          let tentativeG = gScore[current]! + neighbor.cost
-          if !openSet.contains(neighbor.position) {
-            openSet.insert(neighbor.position)
-          } else if tentativeG >= gScore[neighbor.position] ?? Int.max {
-            continue
-          }
-
-          cameFrom[neighbor.position] = current
-          gScore[neighbor.position] = tentativeG
-          fScore[neighbor.position] = tentativeG + heuristicEstimate(start: neighbor.position, goal: goal)
-        }
-      }
-
-      return nil
-    }
-
-    private func heuristicEstimate(start: Position, goal: Position) -> Int {
-      return start.heuristicEstimate(to: goal)
-    }
-
-    private func reconstruct(_ cameFrom: [Position: Position], current: Position) -> [Position] {
-      var current = current
-      var totalPath = [current]
-      while cameFrom[current] != nil {
-        current = cameFrom[current]!
-        totalPath.append(current)
-      }
-      return totalPath
-    }
-
-    private func neighbors(_ position: Position) -> [(position: Position, cost: Int)] {
-      return map.neighbors(of: position)
+      return String(rawValue, radix: 2)
     }
   }
 }
