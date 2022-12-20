@@ -43,4 +43,35 @@ struct Point3D: Hashable, CustomStringConvertible {
   func relDiff(_ other: Point3D) -> Diff {
     return Diff(dx: x - other.x, dy: y - other.y, dz: z - other.z)
   }
+
+  func manhattanDist(_ other: Point3D) -> Int {
+    return abs(x - other.x) + abs(y - other.y) + abs(z - other.z)
+  }
+
+  func isAdjacent(to other: Point3D) -> Bool {
+    return manhattanDist(other) == 1
+  }
+
+  func neighbors(maxX: Int, maxY: Int, maxZ: Int) -> [Point3D] {
+    let xMin = max(x - 1, 0)
+    let yMin = max(y - 1, 0)
+    let zMin = max(z - 1, 0)
+    let xMax = min(x + 1, maxX)
+    let yMax = min(y + 1, maxY)
+    let zMax = min(z + 1, maxZ)
+
+    var neighbors: [Point3D] = []
+
+    for xx in xMin...xMax {
+      for yy in yMin...yMax {
+        for zz in zMin...zMax {
+          if [xx == x, yy == y, zz == z].filter({$0}).count == 2 {
+            neighbors.append(Point3D(x: xx, y: yy, z: zz))
+          }
+        }
+      }
+    }
+
+    return neighbors
+  }
 }
