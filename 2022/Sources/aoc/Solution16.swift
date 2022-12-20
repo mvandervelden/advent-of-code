@@ -42,7 +42,7 @@ class Solution16: Solving {
     //var curState = startState
     var nextStateSet = Set([startState])
 
-    for i in 0..<30 {
+    for _ in 0..<30 {
       // print(i, nextStateSet)
       print(states[startState]!)
       let curStateSet = nextStateSet
