@@ -59,9 +59,11 @@ class Solution22: Solving {
   var location: Point2D! {
     willSet {
       prevLocation = location
+      didChangeDirection = false
     }
   }
   var prevLocation: Point2D!
+  var didChangeDirection = false
 
   var orientation = Orientation.right {
     willSet {
@@ -79,8 +81,6 @@ class Solution22: Solving {
     orientation = Orientation.right
 
     for instr in instructions {
-      // print(instr, ":", location, orientation)
-      // print(grid.prettyDescription)
       orientation.rotate(instr)
       grid[location.y][location.x] = Array(orientation.rawValue)[0]
 
@@ -94,18 +94,14 @@ class Solution22: Solving {
           for _ in 0..<amount where !hitWall {
             let x = location.x + 1
             var newX = x % row.count
-            // print(i, newX)
             if row[newX] == " " {
               newX = row.firstIndex { $0 != " " }!
-              // print("found space, new", newX)
             }
 
             switch row[newX] {
             case "#":
-              // print("hit wall", x, "->", newX, y, row[newX])
               hitWall = true
             default:
-              // print("walking", x, "->", newX, y, row[newX])
               grid[y][newX] = ">"
               location = Point2D(x: newX, y: y)
             }
@@ -148,18 +144,14 @@ class Solution22: Solving {
             let y = location.y + 1
 
             var newY = y % col.count
-            // print(i, newY)
             if col[newY] == " " {
               newY = col.firstIndex { $0 != " " }!
-              // print("found space, new", newY)
             }
 
             switch col[newY] {
             case "#":
-              // print("hit wall", x, y, "->", newY, col[newY])
               hitWall = true
             default:
-              // print("walking", x, y, "->", newY, col[newY])
               grid[newY][x] = "V"
               location = Point2D(x: x, y: newY)
             }
@@ -212,8 +204,6 @@ class Solution22: Solving {
     orientation = Orientation.right
 
     for instr in instructions {
-      // print(instr, ":", location, orientation)
-      // print(grid.prettyDescription)
       orientation.rotate(instr)
       grid[location.y][location.x] = Array(orientation.rawValue)[0]
 
@@ -229,7 +219,6 @@ class Solution22: Solving {
   }
 
   private func move(amount: Int) {
-    print("moving", amount, ":", location!, orientation)
     switch orientation {
     case .right:
       let y = location.y
@@ -239,7 +228,6 @@ class Solution22: Solving {
       for i in 0..<amount where !hitWall {
         let x = location.x + 1
 
-        // print(i, newX)
         if x >= row.count || row[x] == " " {
           nextCubeFace(x: x, y: y, orientation: orientation)
           move(amount: amount - i)
@@ -248,14 +236,12 @@ class Solution22: Solving {
 
         switch row[x] {
         case "#":
-          // print("hit wall", x, "->", newX, y, row[newX])
           hitWall = true
-          if i == 0 {
+          if i == 0 && didChangeDirection {
             location = prevLocation
             orientation = prevOrientation
           }
         default:
-          // print("walking", x, "->", newX, y, row[newX])
           grid[y][x] = ">"
           location = Point2D(x: x, y: y)
         }
@@ -277,6 +263,10 @@ class Solution22: Solving {
         switch row[x] {
         case "#":
           hitWall = true
+          if i == 0 && didChangeDirection {
+            location = prevLocation
+            orientation = prevOrientation
+          }
         default:
           grid[y][x] = "<"
           location = Point2D(x: x, y: y)
@@ -305,10 +295,12 @@ class Solution22: Solving {
 
         switch col[y] {
         case "#":
-          // print("hit wall", x, y, "->", newY, col[newY])
           hitWall = true
+          if i == 0 && didChangeDirection {
+            location = prevLocation
+            orientation = prevOrientation
+          }
         default:
-          // print("walking", x, y, "->", newY, col[newY])
           grid[y][x] = "V"
           location = Point2D(x: x, y: y)
         }
@@ -336,6 +328,10 @@ class Solution22: Solving {
         switch col[y] {
         case "#":
           hitWall = true
+          if i == 0 && didChangeDirection {
+            location = prevLocation
+            orientation = prevOrientation
+          }
         default:
           grid[y][x] = "^"
           location = Point2D(x: x, y: y)
@@ -373,7 +369,62 @@ class Solution22: Solving {
 
   private func nextCubeFace(x: Int, y: Int, orientation o: Orientation) {
     if file.filename == "input.txt" {
-
+      // 12
+      // 3
+      //45
+      //6
+      switch o {
+      case .right:
+        if y < 50 && x >= 150 { // 2R->5R
+          orientation = .left
+          location = Point2D(x: 100, y: 149 - y)
+        } else if y < 100 && x >= 100 { // 3R->2B
+          orientation = .up
+          location = Point2D(x: y - 50 + 100, y: 50)
+        } else if y < 150 && x >= 100 { // 5R->2R
+          orientation = .left
+          location = Point2D(x: 150, y: 49 - (y - 100))
+        } else if y < 200 && x >= 50 { // 6R->5B
+          orientation = .up
+          location = Point2D(x: y - 150 + 50, y: 150)
+        }
+      case .left:
+        if y < 50 && x < 50 { // 1L->4L
+          orientation = .right
+          location = Point2D(x: -1, y: 149 - y)
+        } else if y < 100 && x < 50 { // 3L->4T
+          orientation = .down
+          location = Point2D(x: y - 50, y: 99)
+        } else if y < 150 && x < 0 { // 4L->1L
+          orientation = .right
+          location = Point2D(x: 49, y: 49 - (y - 100))
+        } else if y < 200 && x < 0 { //6L->1T
+          orientation = .down
+          location = Point2D(x: y - 150 + 50, y: -1)
+        }
+      case .down:
+        if x < 50 && y >= 200 { // 6B->2T
+          orientation = .down
+          location = Point2D(x: x + 100, y: -1)
+        } else if x < 100 && y >= 150 { //5B->6R
+          orientation = .left
+          location = Point2D(x: 50, y: x - 50 + 150)
+        } else if x < 150 && y >= 50 { // 2B->3R
+          orientation = .left
+          location = Point2D(x: 100, y: x - 100 + 50)
+        }
+      case .up:
+        if x < 50 && y < 100 { // 4T->3L
+          orientation = .right
+          location = Point2D(x: 49, y: x + 50)
+        } else if x < 100 && y < 0 { //1T->6L
+          orientation = .right
+          location = Point2D(x: -1, y: x - 50 + 150)
+        } else if x < 150 && y < 0 { //2T->6B
+          orientation = .up
+          location = Point2D(x: x - 100, y: 200)
+        }
+      }
     } else {
       //  1
       //234
@@ -390,7 +441,6 @@ class Solution22: Solving {
           orientation = .left
           location = Point2D(x: 12, y: 3 - (y-8))
         } else {
-          print("noop")
           // noop
         }
       case .left:
@@ -403,9 +453,6 @@ class Solution22: Solving {
         } else if y < 12 && x < 8 { // 5L->3B
           orientation = .up
           location = Point2D(x: 7 - (y - 8), y: 8)
-        } else {
-          print("noop")
-          // noop
         }
       case .down:
         if x < 4 && y >= 8 { // 2B->5B
@@ -420,9 +467,6 @@ class Solution22: Solving {
         } else if x < 16 && y >= 12 { // 6B->2L
           orientation = .right
           location = Point2D(x: -1, y: 7 - (x - 12))
-        } else {
-          print("noop")
-          // noop
         }
       case .up:
         if x < 4 && y < 4 { // 2T->1T
@@ -430,19 +474,17 @@ class Solution22: Solving {
           location = Point2D(x: 11 - x, y: -1)
         } else if x < 8 && y < 4 { // 3T->1L
           orientation = .right
-          location = Point2D(x: 7, y: 3 - (x - 8))
+          location = Point2D(x: 7, y: x - 4)
         } else if x < 12 && y < 0 { // 1T->2T
           orientation = .down
           location = Point2D(x: 3 - (x - 12), y: 3)
         } else if x < 16 && y < 8 { // 6T->4R
           orientation = .left
           location = Point2D(x: 12, y: 7 - (x - 16))
-        } else {
-          print("noop")
-          // noop
         }
       }
     }
+    didChangeDirection = true
   }
 }
 
