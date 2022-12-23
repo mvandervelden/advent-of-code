@@ -215,17 +215,15 @@ class Solution17: Solving {
   }
 }
 
-typealias LazyGrid = [Int: [Int: Character]]
-
 extension LazyGrid {
   func prettyDescriptionAdding(_ rock: Rock, x: Int, y: Int) -> String {
     var grid = self
     grid.addRock(rock, x: x, y: y, symbol: "@")
 
-    return grid.prettyDescription
+    return grid.prettyDescriptionInvY
   }
 
-  var prettyDescription: String {
+  var prettyDescriptionInvY: String {
     (0...highestPoint).map { yInv in
       let y = highestPoint - yInv
 
