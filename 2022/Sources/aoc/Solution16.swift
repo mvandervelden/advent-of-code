@@ -1,3 +1,5 @@
+import SwiftGraph
+
 class Solution16: Solving {
   struct Valve: CustomStringConvertible, Hashable {
     let index: Int
@@ -23,6 +25,10 @@ class Solution16: Solving {
     self.file = file
   }
 
+  var valvesDict: [String: Int] = [:]
+  var g: WeightedGraph<String, Int>!
+  var distances: [String: [Int]] = [:]
+
   func solve1() -> String {
     let pattern = #"Valve ([A-Z][A-Z]) has flow rate=(\d+); tunnels? leads? to valves? ([A-Z, ]+)"#
 
@@ -31,118 +37,107 @@ class Solution16: Solving {
       return Valve(match: match, index: i+1)
     }
 
-    let startValve = valves.first { $0.id == "AA" }!
+    for valve in valves {
+      valvesDict[valve.id] = valve.flowRate
+    }
 
-    let startState = State(minLeft: 30, curValve: startValve.index, valves: OpenValveSet.with(indices: []))
-    var states: [State: [State: (Int, [State])]] = [:]
-    Solution16.valveFlow = valves.map(\.flowRate)
+    g = WeightedGraph<String, Int>(vertices: Array(valvesDict.keys))
 
-    states[startState] = [startState: (0, [startState])]
-
-    //var curState = startState
-    var nextStateSet = Set([startState])
-
-    for _ in 0..<30 {
-      // print(i, nextStateSet)
-      print(states[startState]!)
-      let curStateSet = nextStateSet
-      nextStateSet = []
-
-      for state in curStateSet {
-        let valve = valves.first { $0.index == state.curValve }!
-        let flowToHere = states[startState]![state]!
-
-        if !state.valves.contains(OpenValveSet(rawValue: valve.index)) {
-          var valveSet = state.valves
-          valveSet.insert(OpenValveSet(rawValue: valve.index))
-          let openValveState = State(minLeft: state.minLeft - 1, curValve: state.curValve, valves: valveSet)
-          nextStateSet.insert(openValveState)
-
-          let newFlow = flowToHere.0 + openValveState.flowRate
-
-          if let existingStateRate = states[state]?[openValveState]?.0, existingStateRate > newFlow {
-          } else {
-            states[state, default: [:]][openValveState] = (newFlow, flowToHere.1 + [openValveState])
-          }
-
-          if let existingRate = states[startState]?[openValveState]?.0, existingRate > newFlow {
-          } else {
-            states[startState, default: [:]][openValveState] = (newFlow, flowToHere.1 + [openValveState])
-          }
-        }
-
-        let nextValves = valve.connections.map { str in valves.first { $0.id == str }! }
-
-        for nextValve in nextValves {
-          let nextState = State(minLeft: state.minLeft - 1, curValve: nextValve.index, valves: state.valves)
-          nextStateSet.insert(nextState)
-
-          let newFlow = flowToHere.0 + nextState.flowRate
-
-          if let existingStateRate = states[state]?[nextState]?.0, existingStateRate > newFlow {
-          } else {
-            states[state, default: [:]][nextState] = (newFlow, flowToHere.1 + [nextState])
-          }
-
-          if let existingRate = states[startState]?[nextState]?.0, existingRate > newFlow {
-          } else {
-            states[startState, default: [:]][nextState] = (newFlow, flowToHere.1 + [nextState])
-          }
+    for valve in valves {
+      for connection in valve.connections {
+        if !g.edgeExists(from: valve.id, to: connection) {
+          g.addEdge(from: valve.id, to: connection, weight: 1)
         }
       }
     }
 
-    let max = states[startState]!.values.max { $0.0 < $1.0 }
+    print(valvesDict)
+    print(g!)
 
-    return "\(max!.0.description)\n\(max!.1.map(\.description).joined(separator: "\n"))"
+    for i in 0..<g.vertices.count {
+      let (d, _) = g.dijkstra(root: i, startDistance: 0)
+      distances[g.vertices[i]] = d.compactMap { $0 }
+    }
+    print(distances)
+
+    let paths = releasePressure(start: "AA", openValves: [:], maxMin: 30)
+    var rPressures = Set<Int>()
+    print(paths.count)
+    for (_, _, _, _, _, released) in paths {
+      if released > 1000 {
+        rPressures.insert(released)
+      }
+    }
+    print("part 1", rPressures.max()!)
+
+    return ""
+  }
+
+  typealias State = (valve: String, dist: Int, open: [String: Int], moving: Bool, mins: Int, released: Int)
+
+  private func releasePressure(start: String, openValves: [String: Int], maxMin: Int) -> [State] {
+    var openValves = openValves
+    let valve = start
+    let paths = Queue<State>()
+    paths.push((valve: valve, dist: 0, open: openValves, moving: false, mins: 0, released: 0))
+    var finalPaths: [State] = []
+
+    while !paths.isEmpty {
+      var (valve, dist, _, moving, mins, _) = paths.pop()
+      if moving {
+        if mins + dist < maxMin + 1 {
+          paths.push((valve: valve, dist: 0, open: openValves, moving: !moving, mins: mins+dist, released: 0))
+        } else {
+          finalPaths.append((valve: valve, dist: 0, open: openValves, moving: !moving, mins: mins, released: release(openValves, maxMin: maxMin)))
+        }
+      } else {
+        mins += 1
+        if valve != start {
+          openValves[valve] = mins - 1
+        }
+        let nextValves = findNextValves(valve, openValves: openValves)
+        if !nextValves.isEmpty {
+          for next in nextValves {
+            let nexts = next.split(separator: " ")
+            let nextValve = String(nexts[0])
+            let dist = Int(nexts[1])!
+            paths.push((valve: nextValve, dist: dist, open: openValves, moving: !moving, mins: mins, released: 0))
+          }
+        } else {
+          finalPaths.append((valve: valve, dist: 0, open: openValves, moving: !moving, mins: maxMin, released: release(openValves, maxMin: maxMin)))
+        }
+      }
+    }
+    return finalPaths
+  }
+
+  private func release(_ openValves: [String: Int], maxMin: Int) -> Int {
+    var pressure = 0
+    for valve in openValves.keys {
+      pressure += valvesDict[valve]! * (maxMin - openValves[valve]!)
+    }
+    return pressure
+  }
+
+  private func findNextValves(_ start: String, openValves: [String: Int]) -> Set<(String)> {
+    let nodes = Queue<(String, Set<String>)>()
+    nodes.push((start, []))
+    var possibleValves: Set<String> = []
+
+    while !nodes.isEmpty {
+      var (s, visited) = nodes.pop()
+      visited.insert(s)
+      for v in valvesDict.keys where !visited.contains(v) && v != s {
+        nodes.push((v, visited))
+        if openValves[v] == nil, v != start {
+          possibleValves.insert("\(v) \(distances[start]![g.vertices.firstIndex(of: v)!])")
+        }
+      }
+    }
+    return possibleValves
   }
 
   func solve2() -> String {
     return file.filename
-  }
-
-  func dp() {
-    // var dist = Array(repeating: Array(repeating: Int.min, count: state.count), count: state.count)
-
-    // for t in
-  }
-
-  struct State: Hashable, CustomStringConvertible {
-    let minLeft: Int
-    let curValve: Int
-    let valves: OpenValveSet
-    // let totalFlow: Int
-
-    // func hash(into hasher: inout Hasher) {
-    //     hasher.combine(minLeft)
-    //     hasher.combine(curValves)
-    //     hasher.combine(valves)
-    // }
-
-    var description: String {
-      "(valve: \(curValve), min: \(minLeft), valves: \(valves)) -> \(flowRate)"
-    }
-
-    var flowRate: Int {
-      Solution16.valveFlow.enumerated().filter { i, valve in valves.contains(OpenValveSet(rawValue: i+1)) }.map { $1 }.sum()
-    }
-  }
-
-  struct OpenValveSet: OptionSet, Hashable, CustomStringConvertible {
-    let rawValue: Int
-
-    static func with(indices: [Int]) -> OpenValveSet {
-      var set = OpenValveSet(rawValue: 0)
-
-      indices.forEach { index in
-        set.insert(OpenValveSet(rawValue: 1 << index))
-      }
-
-      return set
-    }
-
-    var description: String {
-      return String(rawValue, radix: 2)
-    }
   }
 }

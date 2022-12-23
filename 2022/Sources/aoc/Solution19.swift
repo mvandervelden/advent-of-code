@@ -171,7 +171,7 @@ class Solution19: Solving {
       let state = State(blueprint: bprint)
       let path = astar.astar(start: state, minutes: 24)
 
-      print(path)
+      print(path!)
       print(path!.map(\.description).joined(separator: "\n"))
     }
 
