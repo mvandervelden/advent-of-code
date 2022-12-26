@@ -1,3 +1,5 @@
+import SwiftGraph
+
 class Solution19: Solving {
   struct BluePrint: CustomStringConvertible {
     let id: Int
@@ -104,20 +106,32 @@ class Solution19: Solving {
       return state
     }
 
-    var cost: Int {
-      if clayBots == 0 {
-        return blueprint.clay - clay + blueprint.obsOre + blueprint.obsClay + blueprint.geoOre + blueprint.geoObs
+    func value(endTime: Int) -> Int {
+      if oreBots > blueprint.obsOre + blueprint.clay + blueprint.geoOre {
+        print("enough ore Bots")
+        return -1
       }
 
-      if obsBots == 0 {
-        return blueprint.obsOre - ore + blueprint.obsClay - clay + blueprint.geoOre + blueprint.geoObs
+      if clayBots > blueprint.obsClay {
+        print("enough clay Bots")
+        return -1
       }
 
-      if geoBots == 0 {
-        return blueprint.geoOre - ore + blueprint.geoObs - obs
+      if obsBots > blueprint.geoObs {
+        return -1
       }
 
-      return -geo
+      if clayBots > 0, obsBots == 0 {
+        // prio obs bot
+        return ore + clay
+      }
+
+      if obsBots > 0, geoBots == 0 {
+        // prio geo bot
+        return ore + obs
+      }
+
+      return (geo + geoBots * (endTime - minute)) * 100_000 + 100 * (oreBots + clayBots + obsBots) + ore + clay + obs
     }
 
     var description: String {
@@ -171,7 +185,7 @@ class Solution19: Solving {
       let state = State(blueprint: bprint)
       let path = astar.astar(start: state, minutes: 24)
 
-      print(path!)
+      // print(path)
       print(path!.map(\.description).joined(separator: "\n"))
     }
 
@@ -197,7 +211,7 @@ class Solution19: Solving {
           return lhsScore < rhsScore
         }!
 
-        print("current", current)
+        // print("current", current)
         if current.minute == minutes {
           print("total cost: ", gScore[current]!)
           return reconstruct(cameFrom, current: current)
@@ -206,7 +220,7 @@ class Solution19: Solving {
         openSet.remove(current)
         closedSet.insert(current)
 
-        for neighbor in neighbors(current) {
+        for neighbor in neighbors(current, goal: minutes) {
           if closedSet.contains(neighbor.loc) {
             continue
           }
@@ -229,7 +243,7 @@ class Solution19: Solving {
     }
 
     private func heuristicEstimate(start: State, goal: Int) -> Int {
-      start.cost
+      -start.value(endTime: goal)
     }
 
     private func reconstruct(_ cameFrom: [State: State], current: State) -> [State] {
@@ -242,17 +256,18 @@ class Solution19: Solving {
       return totalPath
     }
 
-    private func neighbors(_ loc: State) -> [(loc: State, cost: Int)] {
+    private func neighbors(_ loc: State, goal: Int) -> [(loc: State, cost: Int)] {
       var locs: [(loc: State, cost: Int)] = []
 
-      let currentValue = loc.cost
+      let currentValue = loc.value(endTime: goal)
 
       let neighborStates = loc.nextStates()
 
       for st in neighborStates {
-        let newValue = st.cost
-        if newValue < currentValue {
-          locs.append((loc: st, cost: newValue))
+        let newValue = st.value(endTime: goal)
+        print(st, ":::", newValue)
+        if newValue > currentValue {
+          locs.append((loc: st, cost: -newValue))
         }
       }
 
