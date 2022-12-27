@@ -1,4 +1,5 @@
 import SwiftGraph
+import Foundation
 
 class Solution24: Solving {
   let file: File
@@ -12,24 +13,61 @@ class Solution24: Solving {
   func solve1() -> String {
     let grid = file.charsByLine
     print("creating state grid")
-    create3DGrid(grid)
-
-    var points: [[Point3D]] = []
+    create3DGrid(grid, tMax: min(500, (grid.count - 2) * (grid[0].count - 2)))
 
     print("creating graph:")
     print(" creating potential states")
-    for t in 0..<tGrid.count {
-      var pList: [Point3D] = []
-      for y in 0..<tGrid[0].count {
-        for x in 0..<tGrid[0][0].count {
-          if tGrid[t][y][x] == "." {
-            pList.append(Point3D(x: x, y: y, z: t))
-          }
-        }
-      }
-      points.append(pList)
+    let points = createPoints()
+
+    let graph = createGraph(points: points)
+
+    print("start bfs")
+    let path = graph.bfs(fromIndex: 0, goalTest: { $0.y == grid.count - 1 })
+
+    return path.count.description
+  }
+
+  func solve2() -> String {
+    let graph: UnweightedGraph<Point3D>
+    let height: Int
+    if file.filename.split(separator:".").last! == "json" {
+      let decoder = JSONDecoder()
+
+      graph = try! decoder.decode(UnweightedGraph<Point3D>.self, from: file.data)
+      height = graph.vertices.last!.y
+    } else {
+      let grid = file.charsByLine
+      height = grid.count - 1
+      print("creating state grid")
+      create3DGrid(grid, tMax: min(1000, ((grid.count - 2) * (grid[0].count - 2))*3))
+
+      print("creating graph:")
+      print(" creating potential states")
+      let points = createPoints()
+      // let allPoints = points.flatMap { $0 }
+
+      graph = createGraph(points: points)
+
+      let encoder = JSONEncoder()
+      let data = try! encoder.encode(graph)
+
+      let url = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+      let fileURL = url.appendingPathComponent("graph.json")
+      try! data.write(to: fileURL)
     }
 
+    print("start bfs")
+    let path1 = graph.bfs(fromIndex: 0, goalTest: { $0.y == height })
+    let endState1 = path1.last!
+    let path2 = graph.bfs(fromIndex: endState1.v, goalTest: { $0.y == 0 })
+    let endState2 = path2.last!
+    let path3 = graph.bfs(fromIndex: endState2.v, goalTest: { $0.y == height })
+    print(path1.count, path2.count, path3.count)
+
+    return (path1.count + path2.count + path3.count).description
+  }
+
+  private func createGraph(points: [[Point3D]]) -> UnweightedGraph<Point3D> {
     let indexOffsets = points.map(\.count)
     let allPoints = points.flatMap { $0 }
     let graph = UnweightedGraph<Point3D>(vertices: allPoints)
@@ -49,26 +87,23 @@ class Solution24: Solving {
         }
       }
     }
-
-    print("start bfs")
-    let path = graph.bfs(fromIndex: 0, goalTest: { $0.y == grid.count - 1 })
-
-    // for p in (path.map(\.u) + [path.last!.v]) {
-      // let pp = points[p]
-      // print(pp)
-      // var t = tGrid[pp.z]
-      // if t[pp.y][pp.x] != "." { print("ERROR, overriding", t[pp.y][pp.x])}
-      // t[pp.y][pp.x] = "E"
-      // print(t.map { String($0) }.joined(separator: "\n"))
-    // }
-
-    // print(path)
-
-    return path.count.description
+    return graph
   }
 
-  func solve2() -> String {
-    return file.filename
+  private func createPoints() -> [[Point3D]] {
+    var points: [[Point3D]] = []
+    for t in 0..<tGrid.count {
+      var pList: [Point3D] = []
+      for y in 0..<tGrid[0].count {
+        for x in 0..<tGrid[0][0].count {
+          if tGrid[t][y][x] == "." {
+            pList.append(Point3D(x: x, y: y, z: t))
+          }
+        }
+      }
+      points.append(pList)
+    }
+    return points
   }
 
   private func areAdjacent(_ p1: Point3D, _ p2: Point3D) -> Bool {
@@ -77,7 +112,7 @@ class Solution24: Solving {
     return p2.z == p1.z + 1 && Point2D(x: p1.x, y: p1.y).manhattanDist(to: Point2D(x: p2.x, y: p2.y)) <= 1
   }
 
-  private func create3DGrid(_ initial: [[Character]]) {
+  private func create3DGrid(_ initial: [[Character]], tMax: Int) {
     let width = initial[0].count
     let height = initial.count
 
@@ -89,8 +124,6 @@ class Solution24: Solving {
 
     var current = initial
     tGrid.append(current)
-
-    let tMax = min(500, (initial.count - 2) * (initial[0].count - 2))
 
     var upBlizzards: [Point2D] = []
     var downBlizzards: [Point2D] = []
@@ -109,7 +142,7 @@ class Solution24: Solving {
       }
     }
 
-    for t in 0..<tMax {
+    for _ in 0..<tMax {
       var next = emptyGrid(width: width, height: height)
 
       var newUpBlizzards: [Point2D] = []

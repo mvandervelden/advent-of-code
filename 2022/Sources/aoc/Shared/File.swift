@@ -11,10 +11,22 @@ class File {
     return String(format: "day%02d", day)
   }
 
+  var currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+  lazy var fileURL: URL? = {
+    return URL(string: "Resources/aoc/\(dayAsFolderName)/\(filename)", relativeTo: currentDirectoryURL)
+  }()
+
+  lazy var data: Data = {
+    guard let fileURL, let contents = try? Data(contentsOf: fileURL) else {
+      fatalError("file not found: \(currentDirectoryURL.path)/Resources/\(dayAsFolderName)/\(filename)")
+    }
+    return contents
+  }()
+
   lazy var string: String = {
-    let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-    guard let fileURL = URL(string: "Resources/aoc/\(dayAsFolderName)/\(filename)", relativeTo: currentDirectoryURL),
-          let contents = try? String(contentsOf: fileURL) else {
+      guard let fileURL,
+            let contents = try? String(contentsOf: fileURL) else {
       fatalError("file not found: \(currentDirectoryURL.path)/Resources/\(dayAsFolderName)/\(filename)")
     }
 
