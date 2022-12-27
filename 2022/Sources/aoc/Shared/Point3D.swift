@@ -1,4 +1,4 @@
-struct Point3D: Hashable, CustomStringConvertible {
+struct Point3D: Hashable, CustomStringConvertible, Codable {
   struct Diff: Hashable, CustomStringConvertible {
     let dx: Int
     let dy: Int
