@@ -8,23 +8,23 @@ def is_invalid_id(num):
     """
     s = str(num)
     length = len(s)
-    
+
     # Try all possible pattern lengths (from 1 to length//2)
     # The pattern must repeat at least twice
     for pattern_len in range(1, length // 2 + 1):
         # Check if the string length is divisible by pattern length
         if length % pattern_len == 0:
             pattern = s[:pattern_len]
-            
+
             # Check if pattern has leading zeros
             if pattern[0] == '0':
                 continue
-            
+
             # Check if the entire string is this pattern repeated
             repetitions = length // pattern_len
             if pattern * repetitions == s and repetitions >= 2:
                 return True
-    
+
     return False
 def solve_part1(input_file):
     """
