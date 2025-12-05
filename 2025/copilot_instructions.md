@@ -8,7 +8,7 @@ Each day's puzzle consists of 2 parts. We first solve 1, then unlock the second 
 
 The code is organized by day [1-12].py Input is organized in the same pattern [1-12].txt
 
-The result should be run using `python [1-12].py`, it will print the results of both parts:
+The result should be run using `python3 [1-12].py`, it will print the results of both parts:
 
 > Part 1: <Result Part 1>
 > Part 2: <Result Part 2>
