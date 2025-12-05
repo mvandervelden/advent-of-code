@@ -73,8 +73,10 @@ def find_accessible_rolls(grid):
     return accessible
 
 
-def solve_part2(input_file):
+def solve_part2(input_file, visualize=False, max_iterations=None):
     """Solve part 2 of the puzzle - simulate removing accessible rolls."""
+    import time
+
     with open(input_file, 'r') as f:
         lines = [line.strip() for line in f if line.strip()]
 
@@ -82,6 +84,17 @@ def solve_part2(input_file):
     grid = [list(line) for line in lines]
 
     total_removed = 0
+    iteration = 0
+    iteration_stats = []
+
+    if visualize:
+        # Clear screen and show initial state
+        print('\033[2J\033[H', end='')
+        total_rolls = sum(row.count('@') for row in grid)
+        print(f"=== Initial State ===")
+        print(f"Total rolls: {total_rolls}\n")
+        print_grid(grid)
+        time.sleep(0.001)
 
     # Keep removing accessible rolls until none remain
     while True:
@@ -90,20 +103,82 @@ def solve_part2(input_file):
         if not accessible:
             break
 
+        iteration += 1
+        iteration_stats.append(len(accessible))
+
+        if visualize and (max_iterations is None or iteration <= max_iterations):
+            # Clear screen and show which rolls are about to be removed
+            print('\033[2J\033[H', end='')
+            print(f"=== Iteration {iteration}: Removing {len(accessible)} rolls ===\n")
+            highlighted_grid = [row[:] for row in grid]
+            for row, col in accessible:
+                highlighted_grid[row][col] = 'X'  # Highlight accessible rolls
+            print_grid(highlighted_grid)
+            time.sleep(0.0)
+
         # Remove all accessible rolls
         for row, col in accessible:
             grid[row][col] = '.'
 
         total_removed += len(accessible)
 
+        if visualize and (max_iterations is None or iteration <= max_iterations):
+            # Clear screen and show after removal
+            print('\033[2J\033[H', end='')
+            remaining_rolls = sum(row.count('@') for row in grid)
+            print(f"=== After Iteration {iteration} ===")
+            print(f"Removed: {len(accessible)}, Total removed: {total_removed}, Remaining: {remaining_rolls}\n")
+            print_grid(grid)
+            time.sleep(0.03)
+
+    if visualize:
+        # Clear screen and show final summary
+        print('\033[2J\033[H', end='')
+        print(f"=== Summary Statistics ===")
+        print(f"Total iterations: {iteration}")
+        print(f"Total rolls removed: {total_removed}")
+        print(f"Average rolls per iteration: {total_removed / iteration:.1f}")
+        print(f"Max rolls in single iteration: {max(iteration_stats)}")
+        print(f"Min rolls in single iteration: {min(iteration_stats)}")
+        print(f"\nIteration breakdown:")
+        for i, count in enumerate(iteration_stats[:10], 1):
+            print(f"  Iteration {i}: {count} rolls")
+        if len(iteration_stats) > 10:
+            print(f"  ... ({len(iteration_stats) - 10} more iterations)")
+
+        print(f"\n=== Final State ===")
+        remaining_rolls = sum(row.count('@') for row in grid)
+        print(f"Remaining rolls: {remaining_rolls}\n")
+        print_grid(grid)
+
     return total_removed
 
 
+def print_grid(grid, clear=False):
+    """Print the grid in a readable format."""
+    if clear:
+        # Move cursor to top-left and clear screen
+        print('\033[H\033[J', end='')
+    for row in grid:
+        print(''.join(row))
+    print()
+
+
 if __name__ == "__main__":
+    import sys
     input_file = "4.txt"
+
+    # Check if visualization flag is passed
+    visualize = "--visualize" in sys.argv or "-v" in sys.argv
+
+    # Check for max iterations limit (e.g., --max=5)
+    max_iterations = None
+    for arg in sys.argv:
+        if arg.startswith("--max="):
+            max_iterations = int(arg.split("=")[1])
 
     part1_result = solve_part1(input_file)
     print(f"Part 1: {part1_result}")
 
-    part2_result = solve_part2(input_file)
+    part2_result = solve_part2(input_file, visualize=visualize, max_iterations=max_iterations)
     print(f"Part 2: {part2_result}")
