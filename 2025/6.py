@@ -183,38 +183,32 @@ def part2_visualized(lines):
         for c in range(end_col, start_col - 1, -1):
             print_worksheet_with_highlight(start_col, end_col, c)
             print(f"Running total: {total}")
-            
+
             digits = []
             for line in padded_lines[:-1]:
                 if c < len(line) and line[c] != ' ':
                     digits.append(line[c])
-            
+
             if digits:
                 number = int(''.join(digits))
                 numbers.append(number)
-            
+
             time.sleep(0.05)
-        
+
         # Get operator
         operator = None
         for c in range(start_col, end_col + 1):
             if padded_lines[-1][c] in ['+', '*']:
                 operator = padded_lines[-1][c]
                 break
-        
+
         if numbers and operator:
             result = solve_problem(numbers, operator)
             total += result
             problem_num += 1    # Final summary
     clear_screen()
-    print("🐙 CEPHALOPOD MATH WORKSHEET - COMPLETE! 🐙")
-    print("=" * 60)
-    print()
-    print(f"✨ Solved {problem_num - 1} problems using cephalopod reading!")
-    print(f"📊 Grand Total: {total}")
-    print()
-    print("🦑 The cephalopods are impressed with your math skills! 🦑")
-    print()
+    clear_screen()
+    print(f"Grand Total: {total}")
 
     return total
 
