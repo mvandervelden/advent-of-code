@@ -4,6 +4,8 @@ Advent of Code 2025 has a 2 part puzzle each day for 12 days (1-12)
 
 The website is https://adventofcode.com/2025/day/[1-12].
 
+_Always check the puzzle first before proposing a solution!_
+
 Each day's puzzle consists of 2 parts. We first solve 1, then unlock the second part. I will provide the second part, since it's locked under login.
 
 The code is organized by day [1-12].py Input is organized in the same pattern [1-12].txt
