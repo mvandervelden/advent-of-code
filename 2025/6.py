@@ -1,56 +1,7 @@
 #!/usr/bin/env python3
 
 def parse_worksheet(lines):
-    """Parse the worksheet and extract vertical problems."""
-    # Find the maximum line length to handle all columns
-    max_len = max(len(line) for line in lines)
-
-    # Pad all lines to the same length
-    padded_lines = [line.ljust(max_len) for line in lines]
-
-    problems = []
-    col = 0
-
-    while col < max_len:
-        # Check if this column is all spaces (separator)
-        if all(line[col] == ' ' for line in padded_lines):
-            col += 1
-            continue
-
-        # Extract a problem starting at this column
-        numbers = []
-        operator = None
-
-        for line in padded_lines[:-1]:  # All lines except the last (operator line)
-            if col < len(line):
-                cell = line[col:].split()[0] if line[col:].strip() else None
-                if cell and cell.isdigit():
-                    numbers.append(int(cell))
-
-        # Get the operator from the last line
-        if col < len(padded_lines[-1]):
-            op_char = padded_lines[-1][col:].strip()
-            if op_char and op_char[0] in ['+', '*']:
-                operator = op_char[0]
-
-        if numbers and operator:
-            problems.append((numbers, operator))
-
-        # Move to the next problem (skip past this number's width)
-        # Find the end of the current column of numbers
-        col_width = 1
-        for line in padded_lines[:-1]:
-            if col < len(line):
-                cell = line[col:].split()[0] if line[col:].strip() else ""
-                col_width = max(col_width, len(cell))
-
-        col += col_width
-
-    return problems
-
-
-def parse_worksheet_v2(lines):
-    """Parse worksheet by processing column by column."""
+    """Parse worksheet left-to-right, numbers arranged vertically."""
     # Pad all lines to the same length
     max_len = max(len(line) for line in lines)
     padded_lines = [line.ljust(max_len) for line in lines]
@@ -86,6 +37,58 @@ def parse_worksheet_v2(lines):
     return problems
 
 
+def parse_cephalopod_worksheet(lines):
+    """Parse worksheet right-to-left in columns (cephalopod style)."""
+    # Pad all lines to the same length
+    max_len = max(len(line) for line in lines)
+    padded_lines = [line.ljust(max_len) for line in lines]
+
+    problems = []
+
+    # Process columns from right to left
+    col = max_len - 1
+
+    while col >= 0:
+        # Skip space columns from the right
+        while col >= 0 and all(line[col] == ' ' for line in padded_lines):
+            col -= 1
+
+        if col < 0:
+            break
+
+        # Find the start of this problem (scan left until we hit all-spaces column or start)
+        end_col = col
+        while col >= 0 and not all(line[col] == ' ' for line in padded_lines):
+            col -= 1
+        start_col = col + 1
+
+        # Extract numbers by reading each column from right to left
+        numbers = []
+        for c in range(end_col, start_col - 1, -1):
+            # Extract digits from this column (excluding operator line)
+            digits = []
+            for line in padded_lines[:-1]:
+                if c < len(line) and line[c] != ' ':
+                    digits.append(line[c])
+
+            # Form a number from these digits (top = most significant)
+            if digits:
+                number = int(''.join(digits))
+                numbers.append(number)
+
+        # Get operator from this problem area (last line)
+        operator = None
+        for c in range(start_col, end_col + 1):
+            if padded_lines[-1][c] in ['+', '*']:
+                operator = padded_lines[-1][c]
+                break
+
+        if numbers and operator:
+            problems.append((numbers, operator))
+
+    return problems
+
+
 def solve_problem(numbers, operator):
     """Solve a single problem."""
     if operator == '+':
@@ -99,21 +102,15 @@ def solve_problem(numbers, operator):
 
 
 def part1(lines):
-    """Solve part 1."""
-    problems = parse_worksheet_v2(lines)
-
-    total = 0
-    for numbers, operator in problems:
-        result = solve_problem(numbers, operator)
-        total += result
-
-    return total
+    """Solve part 1 - standard left-to-right reading."""
+    problems = parse_worksheet(lines)
+    return sum(solve_problem(numbers, operator) for numbers, operator in problems)
 
 
 def part2(lines):
-    """Solve part 2."""
-    # Part 2 will be unlocked after solving part 1
-    return 0
+    """Solve part 2 - cephalopod math (right-to-left in columns)."""
+    problems = parse_cephalopod_worksheet(lines)
+    return sum(solve_problem(numbers, operator) for numbers, operator in problems)
 
 
 if __name__ == "__main__":
