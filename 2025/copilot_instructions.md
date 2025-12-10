@@ -15,4 +15,8 @@ The result should be run using `python3 [1-12].py`, it will print the results of
 > Part 1: <Result Part 1>
 > Part 2: <Result Part 2>
 
+If the solution requires a specific library that is not installed, instruct me to install it (and telling me how).
+
+The solutions should run in max a couple of seconds.
+
 If I'm asking for a visualization, it means I want to visualize the calculation process. It should be done on part 2, and activated by a parameter `--visualize` or `-v`. It should be visualized using ascii, and clearing screen between passes so it doesn't create an endless output stream. It should run in max 10 seconds (so don't wait too long between passes). Be creative in how to visualize the calculation in a fun way!
